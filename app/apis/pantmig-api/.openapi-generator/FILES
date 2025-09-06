@@ -1,0 +1,17 @@
+.openapi-generator-ignore
+apis/RecycleListingsApi.ts
+apis/index.ts
+index.ts
+models/AcceptRequest.ts
+models/ChatStartRequest.ts
+models/City.ts
+models/CreateRecycleListingRequest.ts
+models/ListingStatus.ts
+models/MeetingPointRequest.ts
+models/PickupConfirmRequest.ts
+models/PickupRequest.ts
+models/ReceiptSubmitRequest.ts
+models/ReceiptVerifyRequest.ts
+models/RecycleListing.ts
+models/index.ts
+runtime.ts
