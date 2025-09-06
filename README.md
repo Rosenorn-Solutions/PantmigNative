@@ -1,50 +1,91 @@
-# Welcome to your Expo app 👋
+## Pantmig Native (Expo)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Mobile app built with Expo Router for the Pantmig platform. Users can register, log in, browse active recycle listings, and donors can create new listings. The app uses generated OpenAPI clients for both the core API and the auth service.
 
-## Get started
+### Key features
 
-1. Install dependencies
+- Authentication (login/register) with token storage in AsyncStorage
+- Automatic token refresh via middleware and transparent retry
+- Role-aware UI: Donator can create listings; Recycler can browse
+- Screens: Home, Login, Register, Listings, Create Listing
+- Toast notifications for success/errors
+- Expo Router with typed routes and simple, clean UI
 
-   ```bash
-   npm install
-   ```
+## Quick start
 
-2. Start the app
+Prerequisites
 
-   ```bash
-   npx expo start
-   ```
+- Node.js LTS and npm
+- Android Studio (for Android) and/or Xcode (for iOS)
 
-In the output, you'll find options to open the app in a
+Install dependencies
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```powershell
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Configure backend endpoints (optional now, required for real API calls)
 
-## Learn more
+- Edit `app/config.ts` and set the base URLs:
+   - `API_BASE` (default: `http://localhost:5001`)
+   - `AUTH_BASE` (default: `http://localhost:5002`)
 
-To learn more about developing your project with Expo, look at the following resources:
+Start the app
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```powershell
+npx expo start
+```
 
-## Join the community
+Then choose a platform from the Expo dev tools (Android, iOS, or Web).
 
-Join our community of developers creating universal apps.
+## Backend expectations
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Core API must run at `API_BASE` (default `:5001`)
+- Auth API must run at `AUTH_BASE` (default `:5002`)
+
+On emulators/devices, localhost rules apply:
+
+- Android emulator: use `http://10.0.2.2:PORT`
+- iOS simulator: `http://127.0.0.1:PORT`
+- Physical devices: use your machine’s LAN IP and ensure the ports are reachable
+
+Update `app/config.ts` accordingly when testing on different targets.
+
+## API clients (OpenAPI)
+
+This project uses generated TypeScript Fetch clients for both services:
+
+- Core API: `app/apis/pantmig-api`
+- Auth API: `app/apis/pantmig-auth`
+
+Available scripts
+
+```powershell
+# Generate clients from running backends (Swagger at /swagger/v1/swagger.json)
+npm run generate-api
+npm run generate-auth
+```
+
+Note: If the OpenAPI generator CLI isn’t installed, add it as a dev dependency first:
+
+```powershell
+npm i -D @openapitools/openapi-generator-cli
+```
+
+## Code pointers
+
+- Routing/layout: `app/_layout.tsx`
+- Auth context and token handling: `app/AuthContext.tsx`, `app/services/api.ts`
+- Screens: `app/index.tsx`, `app/login.tsx`, `app/register.tsx`, `app/listings.tsx`, `app/create-listing.tsx`
+- Toast system: `app/Toast.tsx`
+- Config: `app/config.ts`
+
+## Troubleshooting
+
+- 401 errors after login: confirm both services are running and base URLs are correct in `app/config.ts`.
+- Android can’t reach localhost: use `10.0.2.2` instead of `localhost` in `app/config.ts`.
+- CORS/network issues: check backend CORS and that device/emulator can reach the host/port.
+
+## License
+
+Private project. All rights reserved.
