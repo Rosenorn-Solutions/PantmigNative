@@ -45,16 +45,16 @@ export interface CreateRecycleListingRequest {
     location?: string | null;
     /**
      * 
-     * @type {string}
-     * @memberof CreateRecycleListingRequest
-     */
-    estimatedValue?: string | null;
-    /**
-     * 
      * @type {number}
      * @memberof CreateRecycleListingRequest
      */
-    estimatedAmount?: number;
+    estimatedValue?: number | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateRecycleListingRequest
+     */
+    estimatedAmount?: string | null;
     /**
      * 
      * @type {Date}

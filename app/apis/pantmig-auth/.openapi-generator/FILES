@@ -8,6 +8,10 @@ models/RegisterRequest.ts
 models/RegisterResult.ts
 models/TokenRefreshRequest.ts
 models/UserInformationDTO.ts
+models/UserInformationResult.ts
+models/UserRatingDTO.ts
 models/UserType.ts
+models/UsersLookupRequest.ts
+models/UsersLookupResult.ts
 models/index.ts
 runtime.ts

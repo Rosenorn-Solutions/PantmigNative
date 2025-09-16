@@ -16,6 +16,8 @@
 import * as runtime from '../runtime';
 import type {
   AcceptRequest,
+  ApplicantInfo,
+  CancelRequest,
   ChatStartRequest,
   CreateRecycleListingRequest,
   MeetingPointRequest,
@@ -28,6 +30,10 @@ import type {
 import {
     AcceptRequestFromJSON,
     AcceptRequestToJSON,
+    ApplicantInfoFromJSON,
+    ApplicantInfoToJSON,
+    CancelRequestFromJSON,
+    CancelRequestToJSON,
     ChatStartRequestFromJSON,
     ChatStartRequestToJSON,
     CreateRecycleListingRequestFromJSON,
@@ -45,6 +51,14 @@ import {
     RecycleListingFromJSON,
     RecycleListingToJSON,
 } from '../models/index';
+
+export interface ListingsApplicantsGetRequest {
+    id: number;
+}
+
+export interface ListingsCancelRequest {
+    cancelRequest: CancelRequest;
+}
 
 export interface ListingsChatStartRequest {
     chatStartRequest: ChatStartRequest;
@@ -86,6 +100,93 @@ export interface ListingsReceiptVerifyRequest {
  * 
  */
 export class RecycleListingsApi extends runtime.BaseAPI {
+
+    /**
+     * Donator retrieves the list of applicants with their user IDs and appliedAt timestamps.
+     * Get applicants for a listing
+     */
+    async listingsApplicantsGetRaw(requestParameters: ListingsApplicantsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<ApplicantInfo>>> {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling listingsApplicantsGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["Authorization"] = await this.configuration.apiKey("Authorization"); // Bearer authentication
+        }
+
+
+        let urlPath = `/listings/{id}/applicants`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(ApplicantInfoFromJSON));
+    }
+
+    /**
+     * Donator retrieves the list of applicants with their user IDs and appliedAt timestamps.
+     * Get applicants for a listing
+     */
+    async listingsApplicantsGet(requestParameters: ListingsApplicantsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<ApplicantInfo>> {
+        const response = await this.listingsApplicantsGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Donator cancels their own listing if not already completed or cancelled.
+     * Cancel a listing
+     */
+    async listingsCancelRaw(requestParameters: ListingsCancelRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['cancelRequest'] == null) {
+            throw new runtime.RequiredError(
+                'cancelRequest',
+                'Required parameter "cancelRequest" was null or undefined when calling listingsCancel().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["Authorization"] = await this.configuration.apiKey("Authorization"); // Bearer authentication
+        }
+
+
+        let urlPath = `/listings/cancel`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: CancelRequestToJSON(requestParameters['cancelRequest']),
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Donator cancels their own listing if not already completed or cancelled.
+     * Cancel a listing
+     */
+    async listingsCancel(requestParameters: ListingsCancelRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.listingsCancelRaw(requestParameters, initOverrides);
+    }
 
     /**
      * Starts a chat between the donator and the assigned recycler for the listing.
@@ -298,7 +399,77 @@ export class RecycleListingsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Donator accepts a recycler\'s pickup request for the listing.
+     * Returns all listings created by the authenticated donator, including cancelled and completed.
+     * Get my listings
+     */
+    async listingsMyRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RecycleListing>>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["Authorization"] = await this.configuration.apiKey("Authorization"); // Bearer authentication
+        }
+
+
+        let urlPath = `/listings/my-listings`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(RecycleListingFromJSON));
+    }
+
+    /**
+     * Returns all listings created by the authenticated donator, including cancelled and completed.
+     * Get my listings
+     */
+    async listingsMy(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<RecycleListing>> {
+        const response = await this.listingsMyRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Returns all listings the authenticated recycler has applied to.
+     * Get my applications
+     */
+    async listingsMyApplicationsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RecycleListing>>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["Authorization"] = await this.configuration.apiKey("Authorization"); // Bearer authentication
+        }
+
+
+        let urlPath = `/listings/my-applications`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(RecycleListingFromJSON));
+    }
+
+    /**
+     * Returns all listings the authenticated recycler has applied to.
+     * Get my applications
+     */
+    async listingsMyApplications(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<RecycleListing>> {
+        const response = await this.listingsMyApplicationsRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Donator selects one of the applicants and accepts them for pickup.
      * Accept a recycler for pickup
      */
     async listingsPickupAcceptRaw(requestParameters: ListingsPickupAcceptRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
@@ -334,7 +505,7 @@ export class RecycleListingsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Donator accepts a recycler\'s pickup request for the listing.
+     * Donator selects one of the applicants and accepts them for pickup.
      * Accept a recycler for pickup
      */
     async listingsPickupAccept(requestParameters: ListingsPickupAcceptRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
@@ -386,7 +557,7 @@ export class RecycleListingsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Recycler requests to pick up a specific listing.
+     * Recycler requests to pick up a specific listing. Adds the recycler to the applicants list.
      * Request pickup for a listing
      */
     async listingsPickupRequestRaw(requestParameters: ListingsPickupRequestRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
@@ -422,7 +593,7 @@ export class RecycleListingsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Recycler requests to pick up a specific listing.
+     * Recycler requests to pick up a specific listing. Adds the recycler to the applicants list.
      * Request pickup for a listing
      */
     async listingsPickupRequest(requestParameters: ListingsPickupRequestRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {

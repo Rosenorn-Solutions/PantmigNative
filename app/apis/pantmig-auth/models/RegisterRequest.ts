@@ -69,6 +69,12 @@ export interface RegisterRequest {
      * @memberof RegisterRequest
      */
     userType?: UserType;
+    /**
+     * 
+     * @type {string}
+     * @memberof RegisterRequest
+     */
+    city?: string | null;
 }
 
 
@@ -97,6 +103,7 @@ export function RegisterRequestFromJSONTyped(json: any, ignoreDiscriminator: boo
         'phone': json['phone'] == null ? undefined : json['phone'],
         'mitId': json['mitId'] == null ? undefined : json['mitId'],
         'userType': json['userType'] == null ? undefined : UserTypeFromJSON(json['userType']),
+        'city': json['city'] == null ? undefined : json['city'],
     };
 }
 
@@ -118,6 +125,7 @@ export function RegisterRequestToJSONTyped(value?: RegisterRequest | null, ignor
         'phone': value['phone'],
         'mitId': value['mitId'],
         'userType': UserTypeToJSON(value['userType']),
+        'city': value['city'],
     };
 }
 

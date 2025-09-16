@@ -13,6 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
+import type { RecycleListingApplicant } from './RecycleListingApplicant';
+import {
+    RecycleListingApplicantFromJSON,
+    RecycleListingApplicantFromJSONTyped,
+    RecycleListingApplicantToJSON,
+    RecycleListingApplicantToJSONTyped,
+} from './RecycleListingApplicant';
 import type { City } from './City';
 import {
     CityFromJSON,
@@ -60,16 +67,16 @@ export interface RecycleListing {
     location?: string | null;
     /**
      * 
-     * @type {string}
-     * @memberof RecycleListing
-     */
-    estimatedValue?: string | null;
-    /**
-     * 
      * @type {number}
      * @memberof RecycleListing
      */
-    estimatedAmount?: number;
+    estimatedValue?: number | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof RecycleListing
+     */
+    estimatedAmount?: string | null;
     /**
      * 
      * @type {Date}
@@ -184,6 +191,18 @@ export interface RecycleListing {
      * @memberof RecycleListing
      */
     meetingSetAt?: Date | null;
+    /**
+     * 
+     * @type {Array<RecycleListingApplicant>}
+     * @memberof RecycleListing
+     */
+    applicants?: Array<RecycleListingApplicant> | null;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof RecycleListing
+     */
+    readonly appliedForRecyclementUserIdList?: Array<string> | null;
 }
 
 
@@ -230,6 +249,8 @@ export function RecycleListingFromJSONTyped(json: any, ignoreDiscriminator: bool
         'meetingLatitude': json['meetingLatitude'] == null ? undefined : json['meetingLatitude'],
         'meetingLongitude': json['meetingLongitude'] == null ? undefined : json['meetingLongitude'],
         'meetingSetAt': json['meetingSetAt'] == null ? undefined : (new Date(json['meetingSetAt'])),
+        'applicants': json['applicants'] == null ? undefined : ((json['applicants'] as Array<any>).map(RecycleListingApplicantFromJSON)),
+        'appliedForRecyclementUserIdList': json['appliedForRecyclementUserIdList'] == null ? undefined : json['appliedForRecyclementUserIdList'],
     };
 }
 
@@ -237,7 +258,7 @@ export function RecycleListingToJSON(json: any): RecycleListing {
     return RecycleListingToJSONTyped(json, false);
 }
 
-export function RecycleListingToJSONTyped(value?: RecycleListing | null, ignoreDiscriminator: boolean = false): any {
+export function RecycleListingToJSONTyped(value?: Omit<RecycleListing, 'appliedForRecyclementUserIdList'> | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }
@@ -269,6 +290,7 @@ export function RecycleListingToJSONTyped(value?: RecycleListing | null, ignoreD
         'meetingLatitude': value['meetingLatitude'],
         'meetingLongitude': value['meetingLongitude'],
         'meetingSetAt': value['meetingSetAt'] === null ? null : ((value['meetingSetAt'] as any)?.toISOString()),
+        'applicants': value['applicants'] == null ? undefined : ((value['applicants'] as Array<any>).map(RecycleListingApplicantToJSON)),
     };
 }
 

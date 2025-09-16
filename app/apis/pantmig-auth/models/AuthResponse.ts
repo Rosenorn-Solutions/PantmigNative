@@ -44,6 +44,12 @@ export interface AuthResponse {
      * @type {string}
      * @memberof AuthResponse
      */
+    userName?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof AuthResponse
+     */
     firstName?: string | null;
     /**
      * 
@@ -87,6 +93,18 @@ export interface AuthResponse {
      * @memberof AuthResponse
      */
     userType?: UserType;
+    /**
+     * 
+     * @type {number}
+     * @memberof AuthResponse
+     */
+    cityId?: number | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof AuthResponse
+     */
+    cityName?: string | null;
 }
 
 
@@ -110,6 +128,7 @@ export function AuthResponseFromJSONTyped(json: any, ignoreDiscriminator: boolea
         
         'userId': json['userId'] == null ? undefined : json['userId'],
         'email': json['email'] == null ? undefined : json['email'],
+        'userName': json['userName'] == null ? undefined : json['userName'],
         'firstName': json['firstName'] == null ? undefined : json['firstName'],
         'lastName': json['lastName'] == null ? undefined : json['lastName'],
         'accessToken': json['accessToken'] == null ? undefined : json['accessToken'],
@@ -118,6 +137,8 @@ export function AuthResponseFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'linkedInId': json['linkedInId'] == null ? undefined : json['linkedInId'],
         'findJobNuUri': json['findJobNuUri'] == null ? undefined : json['findJobNuUri'],
         'userType': json['userType'] == null ? undefined : UserTypeFromJSON(json['userType']),
+        'cityId': json['cityId'] == null ? undefined : json['cityId'],
+        'cityName': json['cityName'] == null ? undefined : json['cityName'],
     };
 }
 
@@ -134,6 +155,7 @@ export function AuthResponseToJSONTyped(value?: AuthResponse | null, ignoreDiscr
         
         'userId': value['userId'],
         'email': value['email'],
+        'userName': value['userName'],
         'firstName': value['firstName'],
         'lastName': value['lastName'],
         'accessToken': value['accessToken'],
@@ -142,6 +164,8 @@ export function AuthResponseToJSONTyped(value?: AuthResponse | null, ignoreDiscr
         'linkedInId': value['linkedInId'],
         'findJobNuUri': value['findJobNuUri'],
         'userType': UserTypeToJSON(value['userType']),
+        'cityId': value['cityId'],
+        'cityName': value['cityName'],
     };
 }
 

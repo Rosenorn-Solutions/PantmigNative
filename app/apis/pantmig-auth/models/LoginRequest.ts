@@ -24,7 +24,7 @@ export interface LoginRequest {
      * @type {string}
      * @memberof LoginRequest
      */
-    email?: string | null;
+    emailOrUsername?: string | null;
     /**
      * 
      * @type {string}
@@ -50,7 +50,7 @@ export function LoginRequestFromJSONTyped(json: any, ignoreDiscriminator: boolea
     }
     return {
         
-        'email': json['email'] == null ? undefined : json['email'],
+        'emailOrUsername': json['emailOrUsername'] == null ? undefined : json['emailOrUsername'],
         'password': json['password'] == null ? undefined : json['password'],
     };
 }
@@ -66,7 +66,7 @@ export function LoginRequestToJSONTyped(value?: LoginRequest | null, ignoreDiscr
 
     return {
         
-        'email': value['email'],
+        'emailOrUsername': value['emailOrUsername'],
         'password': value['password'],
     };
 }

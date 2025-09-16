@@ -13,6 +13,8 @@ type AuthUser = {
   lastName?: string;
   role?: 'Donator' | 'Recycler';
   userType?: number;
+  cityId?: number | null;
+  cityName?: string | null;
   // Add other fields from AuthResponse as needed
 };
 
@@ -58,7 +60,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const result = await authApi.authLogin({ loginRequest: { email, password } });
+    // Backend now accepts either email or username via `emailOrUsername`
+    const result = await authApi.authLogin({ loginRequest: { emailOrUsername: email, password } });
     if (result?.authResponse?.accessToken) {
       await setAuthFromResponse(result.authResponse);
     }
@@ -87,6 +90,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       lastName: resp.lastName ?? user?.lastName ?? '',
       role,
       userType: (resp.userType as number | undefined) ?? user?.userType,
+  cityId: resp.cityId ?? user?.cityId ?? null,
+  cityName: resp.cityName ?? user?.cityName ?? null,
     };
     setToken(access);
     setRefreshToken(refresh);

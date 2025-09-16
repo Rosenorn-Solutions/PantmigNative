@@ -22,6 +22,9 @@ import type {
   RegisterResult,
   TokenRefreshRequest,
   UserInformationDTO,
+  UserInformationResult,
+  UsersLookupRequest,
+  UsersLookupResult,
 } from '../models/index';
 import {
     AuthResponseFromJSON,
@@ -38,7 +41,17 @@ import {
     TokenRefreshRequestToJSON,
     UserInformationDTOFromJSON,
     UserInformationDTOToJSON,
+    UserInformationResultFromJSON,
+    UserInformationResultToJSON,
+    UsersLookupRequestFromJSON,
+    UsersLookupRequestToJSON,
+    UsersLookupResultFromJSON,
+    UsersLookupResultToJSON,
 } from '../models/index';
+
+export interface AuthGetUserByIdRequest {
+    id: string;
+}
 
 export interface AuthLoginRequest {
     loginRequest: LoginRequest;
@@ -52,14 +65,61 @@ export interface AuthRegisterRequest {
     registerRequest: RegisterRequest;
 }
 
+export interface AuthUsersLookupRequest {
+    usersLookupRequest: UsersLookupRequest;
+}
+
 /**
  * 
  */
 export class AuthApi extends runtime.BaseAPI {
 
     /**
-     * Authenticates a user and returns access and refresh tokens.
-     * Login with email and password
+     * Returns public profile information for a user, including rating.
+     * Get user info by id
+     */
+    async authGetUserByIdRaw(requestParameters: AuthGetUserByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UserInformationResult>> {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling authGetUserById().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["Authorization"] = await this.configuration.apiKey("Authorization"); // Bearer authentication
+        }
+
+
+        let urlPath = `/auth/users/{id}`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => UserInformationResultFromJSON(jsonValue));
+    }
+
+    /**
+     * Returns public profile information for a user, including rating.
+     * Get user info by id
+     */
+    async authGetUserById(requestParameters: AuthGetUserByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UserInformationResult> {
+        const response = await this.authGetUserByIdRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Authenticates a user with either email or username and returns access and refresh tokens.
+     * Login with email/username and password
      */
     async authLoginRaw(requestParameters: AuthLoginRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<LoginResult>> {
         if (requestParameters['loginRequest'] == null) {
@@ -94,8 +154,8 @@ export class AuthApi extends runtime.BaseAPI {
     }
 
     /**
-     * Authenticates a user and returns access and refresh tokens.
-     * Login with email and password
+     * Authenticates a user with either email or username and returns access and refresh tokens.
+     * Login with email/username and password
      */
     async authLogin(requestParameters: AuthLoginRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<LoginResult> {
         const response = await this.authLoginRaw(requestParameters, initOverrides);
@@ -224,6 +284,51 @@ export class AuthApi extends runtime.BaseAPI {
      */
     async authRegister(requestParameters: AuthRegisterRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RegisterResult> {
         const response = await this.authRegisterRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Returns ratings for a list of user ids to reduce round-trips. Uses in-memory cache for faster responses.
+     * Batch lookup users\' ratings
+     */
+    async authUsersLookupRaw(requestParameters: AuthUsersLookupRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UsersLookupResult>> {
+        if (requestParameters['usersLookupRequest'] == null) {
+            throw new runtime.RequiredError(
+                'usersLookupRequest',
+                'Required parameter "usersLookupRequest" was null or undefined when calling authUsersLookup().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["Authorization"] = await this.configuration.apiKey("Authorization"); // Bearer authentication
+        }
+
+
+        let urlPath = `/auth/users/lookup`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: UsersLookupRequestToJSON(requestParameters['usersLookupRequest']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => UsersLookupResultFromJSON(jsonValue));
+    }
+
+    /**
+     * Returns ratings for a list of user ids to reduce round-trips. Uses in-memory cache for faster responses.
+     * Batch lookup users\' ratings
+     */
+    async authUsersLookup(requestParameters: AuthUsersLookupRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UsersLookupResult> {
+        const response = await this.authUsersLookupRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

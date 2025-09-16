@@ -25,6 +25,12 @@ export interface AcceptRequest {
      * @memberof AcceptRequest
      */
     listingId?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof AcceptRequest
+     */
+    recyclerUserId?: string | null;
 }
 
 /**
@@ -45,6 +51,7 @@ export function AcceptRequestFromJSONTyped(json: any, ignoreDiscriminator: boole
     return {
         
         'listingId': json['listingId'] == null ? undefined : json['listingId'],
+        'recyclerUserId': json['recyclerUserId'] == null ? undefined : json['recyclerUserId'],
     };
 }
 
@@ -60,6 +67,7 @@ export function AcceptRequestToJSONTyped(value?: AcceptRequest | null, ignoreDis
     return {
         
         'listingId': value['listingId'],
+        'recyclerUserId': value['recyclerUserId'],
     };
 }
 

@@ -24,11 +24,20 @@ export default function Index() {
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: 16 }}>
       <Text style={{ marginBottom: 4 }}>Velkommen! Vælg en handling:</Text>
       {user?.role && (
-        <Text style={{ marginBottom: 20, color: '#555' }}>Din rolle: {user.role}</Text>
+        <Text style={{ marginBottom: 20, color: '#555' }}>Din rolle: {user.role == 'Donator' ? 'Donor' : 'Panter'}</Text>
+      )}
+      {user?.cityName && (
+        <Text style={{ marginTop: -12, marginBottom: 20, color: '#555' }}>Din by: {user.cityName}</Text>
       )}
       <Button title="Se tilgængelige opslag" onPress={() => router.push("./listings")} />
+      {user?.role === 'Recycler' && (
+        <Button title="Mine ansøgninger" onPress={() => router.push("./my-applications")} />
+      )}
       {user?.role === 'Donator' && (
-        <Button title="Opret opslag" onPress={() => router.push("./create-listing")} />
+        <>
+          <Button title="Opret opslag" onPress={() => router.push("./create-listing")} />
+          <Button title="Mine opslag" onPress={() => router.push("./my-listings")} />
+        </>
       )}
   <Button title="Log ud" color="#dc2626" onPress={async () => { await logout(); show('Du er nu logget ud', 'success'); }} />
     </View>

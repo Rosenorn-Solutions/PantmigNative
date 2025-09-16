@@ -40,11 +40,11 @@ export default function LoginScreen() {
       <Text style={styles.title}>Log ind</Text>
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder="Email eller brugernavn"
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
-        keyboardType="email-address"
+        // Allow username input too; default keyboard is fine across platforms
       />
       <TextInput
         style={styles.input}

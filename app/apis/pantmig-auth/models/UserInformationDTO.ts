@@ -67,6 +67,24 @@ export interface UserInformationDTO {
      * @memberof UserInformationDTO
      */
     createdAt?: Date;
+    /**
+     * 
+     * @type {number}
+     * @memberof UserInformationDTO
+     */
+    cityId?: number | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof UserInformationDTO
+     */
+    cityName?: string | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof UserInformationDTO
+     */
+    rating?: number;
 }
 
 /**
@@ -94,6 +112,9 @@ export function UserInformationDTOFromJSONTyped(json: any, ignoreDiscriminator: 
         'phone': json['phone'] == null ? undefined : json['phone'],
         'isEmailConfirmed': json['isEmailConfirmed'] == null ? undefined : json['isEmailConfirmed'],
         'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
+        'cityId': json['cityId'] == null ? undefined : json['cityId'],
+        'cityName': json['cityName'] == null ? undefined : json['cityName'],
+        'rating': json['rating'] == null ? undefined : json['rating'],
     };
 }
 
@@ -116,6 +137,9 @@ export function UserInformationDTOToJSONTyped(value?: UserInformationDTO | null,
         'phone': value['phone'],
         'isEmailConfirmed': value['isEmailConfirmed'],
         'createdAt': value['createdAt'] == null ? undefined : ((value['createdAt']).toISOString()),
+        'cityId': value['cityId'],
+        'cityName': value['cityName'],
+        'rating': value['rating'],
     };
 }
 
