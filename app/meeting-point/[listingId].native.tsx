@@ -1,6 +1,7 @@
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Button, SafeAreaView, Text, TextInput, View } from 'react-native';
+import { MapView, Marker, Camera, Region } from 'expo-maps';
 import { useAuth } from '../AuthContext';
 import { useToast } from '../Toast';
 import { createRecycleListingsApi } from '../services/api';
@@ -85,7 +86,7 @@ export default function MeetingPointScreen() {
   const [pin, setPin] = useState<MeetingPin | null>(null);
   const [suggestions, setSuggestions] = useState<Array<{ display: string; lat: number; lon: number }>>([]);
   const region = pin ? { ...pin, latitudeDelta: 0.01, longitudeDelta: 0.01 } : { latitude: 55.6761, longitude: 12.5683, latitudeDelta: 0.05, longitudeDelta: 0.05 };
-  const nativeAnimateRef = useRef<null | ((lat: number, lon: number) => void)>(null);
+  const cameraRef = useRef<Camera | null>(null);
 
   const load = useCallback(async () => {
     if (!token || !idNum) return;
@@ -106,7 +107,14 @@ export default function MeetingPointScreen() {
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
-    if (pin && nativeAnimateRef.current) nativeAnimateRef.current(pin.latitude, pin.longitude);
+    if (pin && cameraRef.current) {
+      cameraRef.current.animateToRegion?.({
+        latitude: pin.latitude,
+        longitude: pin.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      } as Region, 500);
+    }
   }, [pin?.latitude, pin?.longitude]);
 
   const canEdit = user?.role === 'Donator' && readonly !== '1';
@@ -194,21 +202,31 @@ export default function MeetingPointScreen() {
             onPick={(lat, lon, display) => {
               setQuery(display);
               setSuggestions([]);
-              if (nativeAnimateRef.current) nativeAnimateRef.current(lat, lon);
+              setPin({ latitude: lat, longitude: lon });
             }}
           />
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ marginBottom: 8 }}>Kort midlertidigt ikke tilgængeligt på native.</Text>
-            <Text style={{ marginBottom: 8, fontSize: 12, color: '#666', textAlign: 'center', paddingHorizontal: 16 }}>
-              Brug søgning for at vælge et mødested. Korttap er deaktiveret i denne midlertidige version.
-            </Text>
-            <TouchableOpacity
-              onPress={searchPlace}
-              style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 6, backgroundColor: '#1f6feb' }}
-            >
-              <Text style={{ color: 'white' }}>Søg efter placering</Text>
-            </TouchableOpacity>
-          </View>
+          <MapView
+            style={{ flex: 1 }}
+            initialRegion={region as any}
+            onPress={(e: any) => {
+              if (!canEdit) return;
+              const { coordinate } = e?.nativeEvent || {};
+              if (coordinate) setPin({ latitude: coordinate.latitude, longitude: coordinate.longitude });
+            }}
+            ref={(ref: any) => {
+              // expo-maps uses Camera; store if available
+              if (ref?.getCamera) {
+                cameraRef.current = ref as unknown as Camera;
+              }
+            }}
+          >
+            {pin ? (
+              <Marker coordinate={{ latitude: pin.latitude, longitude: pin.longitude }} draggable={canEdit} onDragEnd={(e: any) => {
+                const { coordinate } = e?.nativeEvent || {};
+                if (coordinate) setPin({ latitude: coordinate.latitude, longitude: coordinate.longitude });
+              }} />
+            ) : null}
+          </MapView>
           <Footer pin={pin} canEdit={canEdit} onSave={save} saving={saving} />
         </View>
       )}
