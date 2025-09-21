@@ -12,6 +12,13 @@ import { API_BASE, AUTH_BASE } from '../config';
 const apiBasePath = API_BASE || process.env.EXPO_PUBLIC_API_BASE || 'http://localhost:5001';
 const authBasePath = AUTH_BASE || process.env.EXPO_PUBLIC_AUTH_BASE || 'http://localhost:5002';
 
+// Log resolved base paths once for debugging
+// These logs help diagnose emulator/host connectivity issues
+try {
+  // eslint-disable-next-line no-console
+  console.log('[API] Base paths ->', { apiBasePath, authBasePath });
+} catch {}
+
 async function getTokens() {
   const access = await AsyncStorage.getItem('token');
   const refresh = await AsyncStorage.getItem('refreshToken');
@@ -32,13 +39,25 @@ export const setAuthSyncListener = (listener: ((resp: AuthResponse) => void) | n
 
 const authMiddleware: Middleware = {
   pre: async (ctx: RequestContext) => {
-    const { access } = await getTokens();
-    if (access) {
-      ctx.init.headers = { ...(ctx.init.headers || {}), Authorization: `Bearer ${access}` } as any;
+    try {
+      // eslint-disable-next-line no-console
+      console.log('[HTTP]', (ctx.init as any)?.method || 'GET', ctx.url);
+    } catch {}
+    const lowerUrl = (ctx.url || '').toLowerCase();
+    const isAuthPublic = lowerUrl.includes('/auth/login') || lowerUrl.includes('/auth/register') || lowerUrl.includes('/auth/refresh');
+    if (!isAuthPublic) {
+      const { access } = await getTokens();
+      if (access) {
+        ctx.init.headers = { ...(ctx.init.headers || {}), Authorization: `Bearer ${access}` } as any;
+      }
     }
     return { url: ctx.url, init: ctx.init };
   },
   onError: async (ctx: ErrorContext) => {
+    try {
+      // eslint-disable-next-line no-console
+      console.error('[HTTP ERROR]', ctx.url, ctx.error);
+    } catch {}
     const res = ctx.response;
     if (res && res.status === 401) {
       const { access, refresh } = await getTokens();

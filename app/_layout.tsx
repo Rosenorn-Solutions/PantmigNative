@@ -69,6 +69,8 @@ export default function RootLayout() {
           <Stack.Screen name="my-listings" options={{ title: 'Mine opslag' }} />
           <Stack.Screen name="my-applications" options={{ title: 'Mine ansøgninger' }} />
           <Stack.Screen name="listing-applicants" options={{ title: 'Ansøgere' }} />
+          <Stack.Screen name="chat/[listingId]" options={{ title: 'Chat' }} />
+          <Stack.Screen name="meeting-point/[listingId]" options={{ title: 'Mødested' }} />
         </Stack>
       </AuthProvider>
     </ToastProvider>

@@ -131,9 +131,10 @@ export default function ListingApplicantsScreen() {
     try {
       setBusy(recyclerUserId);
       const api = createRecycleListingsApi();
-      await api.listingsPickupAccept({ acceptRequest: { listingId, recyclerUserId } });
-  show('Recycler valgt', 'success');
-  router.back();
+    await api.listingsPickupAccept({ acceptRequest: { listingId, recyclerUserId } });
+    show('Recycler valgt', 'success');
+    // Navigate to my listings to reflect new assigned recycler + enable chat button
+    router.replace('/my-listings');
     } catch (e) {
       console.error(e);
       show('Kunne ikke vælge ansøger', 'error');
