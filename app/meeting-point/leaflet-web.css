@@ -1,0 +1,16 @@
+.mapFill {
+  height: 100%;
+  width: 100%;
+}
+
+/* Ensure Leaflet container actually renders and receives pointer events */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  outline: none;
+}
+
+/* Avoid parent flex glitches on some browsers */
+html, body, #root, #__next {
+  height: 100%;
+}

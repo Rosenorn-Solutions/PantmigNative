@@ -53,8 +53,9 @@ export default function LoginScreen() {
         onChangeText={setPassword}
         secureTextEntry
       />
-      <Button title={loading ? 'Logger ind...' : 'Log ind'} onPress={handleLogin} disabled={loading} />
-      <Button title="Opret konto" onPress={() => router.push('/register')} />
+  <Button title={loading ? 'Logger ind...' : 'Log ind'} onPress={handleLogin} disabled={loading} />
+  <View style={{ height: 12 }} />
+  <Button title="Opret konto" onPress={() => router.push('/register')} />
     </View>
   );
 }

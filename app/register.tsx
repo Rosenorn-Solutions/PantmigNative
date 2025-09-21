@@ -1,6 +1,6 @@
 import { Redirect, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Button, InteractionManager, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { CitiesApi } from './apis/pantmig-api/apis';
 import type { CitySearchResult } from './apis/pantmig-api/models/CitySearchResult';
 import { UserType } from './apis/pantmig-auth/models/UserType';
@@ -23,6 +23,7 @@ export default function RegisterScreen() {
   const [cityOpen, setCityOpen] = useState(false);
   const [cityLoading, setCityLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deferredFirstOpenRef = useRef(false);
   const citiesApi = useMemo(() => new CitiesApi(pantmigApiConfig), []);
   const suppressNextSearchRef = useRef(false);
   const [loading, setLoading] = useState(false);
@@ -54,7 +55,7 @@ export default function RegisterScreen() {
     }
     setLoading(true);
     try {
-  const res = await authApi.authRegister({ registerRequest: { email, password, firstName, lastName, phone, userType, city: city || cityQuery } });
+      const res = await authApi.authRegister({ registerRequest: { email, password, firstName, lastName, phone, userType, city: city || cityQuery } });
       if (res?.authResponse?.accessToken) {
         await setAuthFromResponse(res.authResponse);
         show('Din konto er oprettet!', 'success');
@@ -65,7 +66,7 @@ export default function RegisterScreen() {
       }
     } catch (error: any) {
       console.error('Register error', error);
-  show('Registrering mislykkedes. Tjek dine oplysninger.', 'error');
+      show('Registrering mislykkedes. Tjek dine oplysninger.', 'error');
     } finally {
       setLoading(false);
     }
@@ -89,7 +90,14 @@ export default function RegisterScreen() {
         setCityLoading(true);
         const results = await citiesApi.citiesSearch({ q, take: 8 });
         setCityResults(results || []);
-        setCityOpen(true);
+        if (Platform.OS === 'android' && !deferredFirstOpenRef.current) {
+          deferredFirstOpenRef.current = true;
+          InteractionManager.runAfterInteractions(() => {
+            requestAnimationFrame(() => setCityOpen(true));
+          });
+        } else {
+          setCityOpen(true);
+        }
       } catch (e) {
         // Log and close dropdown on error to satisfy lint rules
         console.debug('City search failed', e);
@@ -117,6 +125,8 @@ export default function RegisterScreen() {
         value={email}
         onChangeText={(v) => { setEmail(v); if (errors.email) setErrors({ ...errors, email: '' }); }}
         autoCapitalize="none"
+        autoComplete="off"
+        textContentType="none"
         keyboardType="email-address"
       />
       {!!errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
@@ -149,14 +159,15 @@ export default function RegisterScreen() {
         onChangeText={setPhone}
         keyboardType="phone-pad"
       />
-  <View style={[styles.typeaheadContainer, cityOpen && styles.typeaheadOpen]}>        
+      <View style={[styles.typeaheadContainer, cityOpen && styles.typeaheadOpen]}>
         <TextInput
           style={[styles.input, errors.city && styles.inputError]}
           placeholder="By (fx. København)"
           value={cityQuery}
           onChangeText={(t) => {
             setCityQuery(t);
-            setCityOpen(!!t);
+            const shouldOpen = !!t && (Platform.OS !== 'android' || deferredFirstOpenRef.current);
+            setCityOpen(shouldOpen);
             if (errors.city) setErrors({ ...errors, city: '' });
           }}
           autoCapitalize="words"
@@ -189,11 +200,11 @@ export default function RegisterScreen() {
                     suffix = ` (${pcs}${hasMore ? '…' : ''})`;
                   }
                   return (
-          <Pressable
+                    <Pressable
                       key={c.id}
                       onPressIn={() => { selectingRef.current = true; }}
                       onPress={() => {
-            suppressNextSearchRef.current = true;
+                        suppressNextSearchRef.current = true;
                         setCity(c.name || '');
                         setCityQuery(c.name || '');
                         setCityOpen(false);
@@ -284,9 +295,9 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 8,
-  elevation: 50,
+    elevation: 50,
     maxHeight: 240,
-  zIndex: 9999,
+    zIndex: 9999,
     overflow: 'hidden',
   },
   dropdownItem: {

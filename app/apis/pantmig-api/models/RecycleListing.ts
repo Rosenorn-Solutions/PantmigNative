@@ -157,6 +157,24 @@ export interface RecycleListing {
     receiptImageUrl?: string | null;
     /**
      * 
+     * @type {string}
+     * @memberof RecycleListing
+     */
+    receiptImageBytes?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof RecycleListing
+     */
+    receiptImageContentType?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof RecycleListing
+     */
+    receiptImageFileName?: string | null;
+    /**
+     * 
      * @type {number}
      * @memberof RecycleListing
      */
@@ -243,6 +261,9 @@ export function RecycleListingFromJSONTyped(json: any, ignoreDiscriminator: bool
         'pickupConfirmedAt': json['pickupConfirmedAt'] == null ? undefined : (new Date(json['pickupConfirmedAt'])),
         'chatSessionId': json['chatSessionId'] == null ? undefined : json['chatSessionId'],
         'receiptImageUrl': json['receiptImageUrl'] == null ? undefined : json['receiptImageUrl'],
+        'receiptImageBytes': json['receiptImageBytes'] == null ? undefined : json['receiptImageBytes'],
+        'receiptImageContentType': json['receiptImageContentType'] == null ? undefined : json['receiptImageContentType'],
+        'receiptImageFileName': json['receiptImageFileName'] == null ? undefined : json['receiptImageFileName'],
         'reportedAmount': json['reportedAmount'] == null ? undefined : json['reportedAmount'],
         'verifiedAmount': json['verifiedAmount'] == null ? undefined : json['verifiedAmount'],
         'completedAt': json['completedAt'] == null ? undefined : (new Date(json['completedAt'])),
@@ -284,6 +305,9 @@ export function RecycleListingToJSONTyped(value?: Omit<RecycleListing, 'appliedF
         'pickupConfirmedAt': value['pickupConfirmedAt'] === null ? null : ((value['pickupConfirmedAt'] as any)?.toISOString()),
         'chatSessionId': value['chatSessionId'],
         'receiptImageUrl': value['receiptImageUrl'],
+        'receiptImageBytes': value['receiptImageBytes'],
+        'receiptImageContentType': value['receiptImageContentType'],
+        'receiptImageFileName': value['receiptImageFileName'],
         'reportedAmount': value['reportedAmount'],
         'verifiedAmount': value['verifiedAmount'],
         'completedAt': value['completedAt'] === null ? null : ((value['completedAt'] as any)?.toISOString()),

@@ -92,6 +92,12 @@ export interface ListingsReceiptSubmitRequest {
     receiptSubmitRequest: ReceiptSubmitRequest;
 }
 
+export interface ListingsReceiptUploadRequest {
+    listingId: number;
+    reportedAmount: number;
+    file: Blob;
+}
+
 export interface ListingsReceiptVerifyRequest {
     receiptVerifyRequest: ReceiptVerifyRequest;
 }
@@ -642,6 +648,90 @@ export class RecycleListingsApi extends runtime.BaseAPI {
      */
     async listingsReceiptSubmit(requestParameters: ListingsReceiptSubmitRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.listingsReceiptSubmitRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Recycler uploads the receipt image as multipart/form-data with fields: listingId, reportedAmount, file.
+     * Upload receipt image
+     */
+    async listingsReceiptUploadRaw(requestParameters: ListingsReceiptUploadRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['listingId'] == null) {
+            throw new runtime.RequiredError(
+                'listingId',
+                'Required parameter "listingId" was null or undefined when calling listingsReceiptUpload().'
+            );
+        }
+
+        if (requestParameters['reportedAmount'] == null) {
+            throw new runtime.RequiredError(
+                'reportedAmount',
+                'Required parameter "reportedAmount" was null or undefined when calling listingsReceiptUpload().'
+            );
+        }
+
+        if (requestParameters['file'] == null) {
+            throw new runtime.RequiredError(
+                'file',
+                'Required parameter "file" was null or undefined when calling listingsReceiptUpload().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["Authorization"] = await this.configuration.apiKey("Authorization"); // Bearer authentication
+        }
+
+        const consumes: runtime.Consume[] = [
+            { contentType: 'multipart/form-data' },
+        ];
+        // @ts-ignore: canConsumeForm may be unused
+        const canConsumeForm = runtime.canConsumeForm(consumes);
+
+        let formParams: { append(param: string, value: any): any };
+        let useForm = false;
+        // use FormData to transmit files using content-type "multipart/form-data"
+        useForm = canConsumeForm;
+        if (useForm) {
+            formParams = new FormData();
+        } else {
+            formParams = new URLSearchParams();
+        }
+
+        if (requestParameters['listingId'] != null) {
+            formParams.append('listingId', requestParameters['listingId'] as any);
+        }
+
+        if (requestParameters['reportedAmount'] != null) {
+            formParams.append('reportedAmount', requestParameters['reportedAmount'] as any);
+        }
+
+        if (requestParameters['file'] != null) {
+            formParams.append('file', requestParameters['file'] as any);
+        }
+
+
+        let urlPath = `/listings/receipt/upload`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: formParams,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Recycler uploads the receipt image as multipart/form-data with fields: listingId, reportedAmount, file.
+     * Upload receipt image
+     */
+    async listingsReceiptUpload(requestParameters: ListingsReceiptUploadRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.listingsReceiptUploadRaw(requestParameters, initOverrides);
     }
 
     /**
