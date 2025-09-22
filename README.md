@@ -6,6 +6,7 @@ Mobile app built with Expo Router for the Pantmig platform. Users can register, 
 
 - Authentication (login/register) with token storage in AsyncStorage
 - Automatic token refresh via middleware and transparent retry
+- Proactive token refresh before expiry and on app resume
 - Role-aware UI: Donator can create listings; Recycler can browse
 - Screens: Home, Login, Register, Listings, Create Listing
 - Toast notifications for success/errors
@@ -83,6 +84,7 @@ npm i -D @openapitools/openapi-generator-cli
 ## Troubleshooting
 
 - 401 errors after login: confirm both services are running and base URLs are correct in `app/config.ts`.
+- Refresh loop or sudden logout: your refresh token may be invalid/expired. The app proactively refreshes ~1 minute before access expiry and also on resume; on failure it logs you out and shows a toast. Log in again to continue.
 - Android can’t reach localhost: use `10.0.2.2` instead of `localhost` in `app/config.ts`.
 - CORS/network issues: check backend CORS and that device/emulator can reach the host/port.
 

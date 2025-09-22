@@ -30,12 +30,43 @@ async function saveAuth(resp: AuthResponse) {
   const refresh = resp.refreshToken ?? '';
   await AsyncStorage.setItem('token', access);
   await AsyncStorage.setItem('refreshToken', refresh);
+  try {
+    const exp = resp.accessTokenExpiration ? new Date(resp.accessTokenExpiration).toISOString() : '';
+    if (exp) await AsyncStorage.setItem('tokenExpiresAt', exp);
+  } catch {}
 }
 
 let authSyncListener: ((resp: AuthResponse) => void) | null = null;
 export const setAuthSyncListener = (listener: ((resp: AuthResponse) => void) | null) => {
   authSyncListener = listener;
 };
+
+let refreshInFlight: Promise<AuthResponse | null> | null = null;
+
+async function refreshTokens(access: string | null, refresh: string | null): Promise<AuthResponse | null> {
+  if (!refresh) return null;
+  if (refreshInFlight) return refreshInFlight;
+  const runner = (async () => {
+    try {
+      const authApi = new AuthApi(new AuthConfig({ basePath: authBasePath }));
+      const refreshed = await authApi.authRefresh({ tokenRefreshRequest: { accessToken: access ?? '', refreshToken: refresh } as TokenRefreshRequest });
+      await saveAuth(refreshed);
+      if (authSyncListener) authSyncListener(refreshed);
+      return refreshed;
+    } catch (e) {
+      try {
+        await AsyncStorage.removeItem('token');
+        await AsyncStorage.removeItem('refreshToken');
+        await AsyncStorage.removeItem('tokenExpiresAt');
+      } catch {}
+      return null;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+  refreshInFlight = runner;
+  return runner;
+}
 
 const authMiddleware: Middleware = {
   pre: async (ctx: RequestContext) => {
@@ -46,7 +77,19 @@ const authMiddleware: Middleware = {
     const lowerUrl = (ctx.url || '').toLowerCase();
     const isAuthPublic = lowerUrl.includes('/auth/login') || lowerUrl.includes('/auth/register') || lowerUrl.includes('/auth/refresh');
     if (!isAuthPublic) {
-      const { access } = await getTokens();
+      let { access, refresh } = await getTokens();
+      try {
+        const expIso = await AsyncStorage.getItem('tokenExpiresAt');
+        if (expIso) {
+          const msLeft = new Date(expIso).getTime() - Date.now();
+          if (msLeft <= 30_000) {
+            const refreshed = await refreshTokens(access, refresh);
+            if (refreshed?.accessToken) {
+              access = refreshed.accessToken ?? access;
+            }
+          }
+        }
+      } catch {}
       if (access) {
         ctx.init.headers = { ...(ctx.init.headers || {}), Authorization: `Bearer ${access}` } as any;
       }
@@ -61,19 +104,11 @@ const authMiddleware: Middleware = {
     const res = ctx.response;
     if (res && res.status === 401) {
       const { access, refresh } = await getTokens();
-      if (refresh) {
-        try {
-          const authApi = new AuthApi(new AuthConfig({ basePath: authBasePath }));
-          const refreshed = await authApi.authRefresh({ tokenRefreshRequest: { accessToken: access ?? '', refreshToken: refresh } as TokenRefreshRequest });
-          await saveAuth(refreshed);
-          if (authSyncListener) authSyncListener(refreshed);
-          // retry original request with new access token
-          const newAccess = refreshed.accessToken ?? '';
-          const retryInit: RequestInit = { ...ctx.init, headers: { ...(ctx.init.headers || {}), Authorization: `Bearer ${newAccess}` } } as any;
-          return await fetch(ctx.url, retryInit);
-        } catch (e) {
-          console.error('Token refresh failed', e);
-        }
+      const refreshed = await refreshTokens(access, refresh);
+      if (refreshed?.accessToken) {
+        const newAccess = refreshed.accessToken ?? '';
+        const retryInit: RequestInit = { ...ctx.init, headers: { ...(ctx.init.headers || {}), Authorization: `Bearer ${newAccess}` } } as any;
+        return await fetch(ctx.url, retryInit);
       }
     }
     return undefined;
