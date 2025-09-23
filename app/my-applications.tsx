@@ -1,7 +1,8 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { Redirect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Button, FlatList, RefreshControl, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, Text, View } from 'react-native';
+import PressableButton from '../components/PressableButton';
 import { ListingStatus } from './apis/pantmig-api/models/ListingStatus';
 import type { RecycleListing } from './apis/pantmig-api/models/RecycleListing';
 import { useAuth } from './AuthContext';
@@ -83,7 +84,7 @@ export default function MyApplicationsScreen() {
                 </Text>
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
                   {item.chatSessionId ? (
-                    <Button
+                    <PressableButton
                       title={isFinal ? 'Chat (afsluttet)' : 'Chat'}
                       onPress={() => {
                         if (isFinal) return;
@@ -91,10 +92,11 @@ export default function MyApplicationsScreen() {
                       }}
                       disabled={isFinal}
                       color="#2563eb"
+                      iconName="chatbubble-ellipses-outline"
                     />
                   ) : null}
                   {item.meetingLatitude != null && item.meetingLongitude != null ? (
-                    <Button
+                    <PressableButton
                       title={isFinal ? 'Vis mødested (afsluttet)' : 'Vis mødested'}
                       onPress={() => {
                         if (isFinal) return;
@@ -102,32 +104,17 @@ export default function MyApplicationsScreen() {
                       }}
                       disabled={isFinal}
                       color="#10b981"
+                      iconName="location-outline"
                     />
                   ) : null}
-                  {hasMeetingPoint && !pickupConfirmed && !isFinal ? (
-                    <Button
-                      title="Godkend hentning"
-                      onPress={async () => {
-                        try {
-                          const api = createRecycleListingsApi();
-                          await api.listingsPickupConfirm({ pickupConfirmRequest: { listingId: item.id! } });
-                          show('Hentning godkendt', 'success');
-                          await load();
-                        } catch (e) {
-                          console.error(e);
-                          show('Kunne ikke godkende hentning', 'error');
-                        }
-                      }}
-                      color="#f59e0b"
-                    />
-                  ) : null}
-                  {pickupConfirmed && !isFinal ? (
-                    <Button
-                      title="Færdigør"
+                  {pickupConfirmed ? (
+                    <PressableButton
+                      title="Gem flaskebon"
                       onPress={() => {
                         router.push({ pathname: '/receipt-upload/[listingId]', params: { listingId: String(item.id) } } as any);
                       }}
                       color="#7c3aed"
+                      iconName="receipt-outline"
                     />
                   ) : null}
                 </View>

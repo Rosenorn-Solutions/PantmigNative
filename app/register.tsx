@@ -1,6 +1,7 @@
 import { Redirect, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, InteractionManager, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { InteractionManager, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import PressableButton from '../components/PressableButton';
 import { CitiesApi } from './apis/pantmig-api/apis';
 import type { CitySearchResult } from './apis/pantmig-api/models/CitySearchResult';
 import { UserType } from './apis/pantmig-auth/models/UserType';
@@ -231,19 +232,21 @@ export default function RegisterScreen() {
       <View style={styles.segmented}>
         <Text style={styles.segmentedLabel}>Vælg rolle</Text>
         <View style={styles.segmentedRow}>
-          <Button
+          <PressableButton
             title={`Donor${userType === UserType.NUMBER_0 ? ' ✓' : ''}`}
             onPress={() => setUserType(UserType.NUMBER_0)}
-            color={userType === UserType.NUMBER_0 ? '#16a34a' : undefined}
+            color={userType === UserType.NUMBER_0 ? '#16a34a' : '#6b7280'}
+            iconName="gift-outline"
           />
-          <Button
+          <PressableButton
             title={`Panter${userType === UserType.NUMBER_1 ? ' ✓' : ''}`}
             onPress={() => setUserType(UserType.NUMBER_1)}
-            color={userType === UserType.NUMBER_1 ? '#16a34a' : undefined}
+            color={userType === UserType.NUMBER_1 ? '#16a34a' : '#6b7280'}
+            iconName="recycle-outline"
           />
         </View>
       </View>
-      <Button title={loading ? 'Opretter...' : 'Opret konto'} onPress={handleRegister} disabled={loading} />
+      <PressableButton title={loading ? 'Opretter...' : 'Opret konto'} onPress={handleRegister} disabled={loading} color="#2563eb" iconName="person-add-outline" />
     </ScrollView>
   );
 }

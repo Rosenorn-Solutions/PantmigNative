@@ -1,7 +1,8 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { Redirect } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Button, FlatList, RefreshControl, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, Text, View } from 'react-native';
+import PressableButton from '../components/PressableButton';
 import type { RecycleListing } from './apis/pantmig-api/models/RecycleListing';
 import { useAuth } from './AuthContext';
 import { createRecycleListingsApi } from './services/api';
@@ -125,10 +126,12 @@ export default function ListingsScreen() {
           <Text style={{ marginTop: 4, color: getStatus(item).color }}>Status: {getStatus(item).label}</Text>
           {user?.role === 'Recycler' && (
             <View style={{ marginTop: 8 }}>
-              <Button
+              <PressableButton
                 title={getApplyLabel(item)}
                 onPress={() => apply(item)}
                 disabled={isApplyDisabled(item)}
+                color="#16a34a"
+                iconName="send-outline"
               />
             </View>
           )}

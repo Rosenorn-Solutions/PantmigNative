@@ -1,6 +1,7 @@
 import { Redirect, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
+import PressableButton from '../components/PressableButton';
 import { useAuth } from './AuthContext';
 import { useToast } from './Toast';
 
@@ -53,9 +54,9 @@ export default function LoginScreen() {
         onChangeText={setPassword}
         secureTextEntry
       />
-  <Button title={loading ? 'Logger ind...' : 'Log ind'} onPress={handleLogin} disabled={loading} />
+  <PressableButton title={loading ? 'Logger ind...' : 'Log ind'} onPress={handleLogin} disabled={loading} color="#2563eb" iconName="log-in-outline" style={styles.button} />
   <View style={{ height: 12 }} />
-  <Button title="Opret konto" onPress={() => router.push('/register')} />
+  <PressableButton title="Opret konto" onPress={() => router.push('/register')} color="#6b7280" iconName="person-add-outline" style={styles.button} />
     </View>
   );
 }
@@ -79,4 +80,7 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
   },
+  button: {
+    justifyContent: 'center',
+  }
 });

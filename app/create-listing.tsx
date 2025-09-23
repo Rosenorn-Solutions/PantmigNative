@@ -1,7 +1,8 @@
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Redirect, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import PressableButton from '../components/PressableButton';
 import { CitiesApi } from './apis/pantmig-api/apis';
 import type { CitySearchResult } from './apis/pantmig-api/models/CitySearchResult';
 import { CreateRecycleListingRequest } from './apis/pantmig-api/models/CreateRecycleListingRequest';
@@ -331,15 +332,15 @@ export default function CreateListingScreen() {
                 <Text style={[styles.webPickerLabel, { marginTop: 8 }]}>Tid (TT:MM)</Text>
                 <TextInput style={styles.input} value={fromTimeStr} placeholder="14:30" onChangeText={setFromTimeStr} />
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, justifyContent: 'flex-end' }}>
-                  <Button title="Annuller" onPress={() => setWebFromOpen(false)} />
-                  <Button title="Vælg" onPress={() => {
+                  <PressableButton title="Annuller" onPress={() => setWebFromOpen(false)} color="#6b7280" iconName="close-outline" />
+                  <PressableButton title="Vælg" onPress={() => {
                     const d = parseLocal(fromDateStr, fromTimeStr);
                     if (!d) { setErrors({ ...errors, availableFrom: 'Ugyldigt dato/tid-format' }); return; }
                     updateField('availableFrom', d);
                     setErrors({ ...errors, availableFrom: '' });
                     shiftEndIfNeeded(d);
                     setWebFromOpen(false);
-                  }} />
+                  }} color="#16a34a" iconName="checkmark-outline" />
                 </View>
               </View>
             </View>
@@ -353,15 +354,15 @@ export default function CreateListingScreen() {
                 <Text style={[styles.webPickerLabel, { marginTop: 8 }]}>Tid (TT:MM)</Text>
                 <TextInput style={styles.input} value={toTimeStr} placeholder="15:45" onChangeText={setToTimeStr} />
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, justifyContent: 'flex-end' }}>
-                  <Button title="Annuller" onPress={() => setWebToOpen(false)} />
-                  <Button title="Vælg" onPress={() => {
+                  <PressableButton title="Annuller" onPress={() => setWebToOpen(false)} color="#6b7280" iconName="close-outline" />
+                  <PressableButton title="Vælg" onPress={() => {
                     const d = parseLocal(toDateStr, toTimeStr);
                     if (!d) { setErrors({ ...errors, availableTo: 'Ugyldigt dato/tid-format' }); return; }
                     if (form.availableFrom && d <= form.availableFrom) { setErrors({ ...errors, availableTo: 'Sluttid skal være efter starttid' }); return; }
                     updateField('availableTo', d);
                     setErrors({ ...errors, availableTo: '' });
                     setWebToOpen(false);
-                  }} />
+                  }} color="#16a34a" iconName="checkmark-outline" />
                 </View>
               </View>
             </View>
@@ -407,7 +408,7 @@ export default function CreateListingScreen() {
         }}
       />
       {!!errors.estimatedAmount && <Text style={styles.errorText}>{errors.estimatedAmount}</Text>}
-      <Button title={loading ? 'Opretter...' : 'Opret'} onPress={submit} disabled={loading} />
+  <PressableButton title={loading ? 'Opretter...' : 'Opret'} onPress={submit} disabled={loading} color="#2563eb" iconName="save-outline" />
     </ScrollView>
   );
 }

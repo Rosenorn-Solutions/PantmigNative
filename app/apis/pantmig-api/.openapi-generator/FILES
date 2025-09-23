@@ -13,8 +13,6 @@ models/ListingStatus.ts
 models/MeetingPointRequest.ts
 models/PickupConfirmRequest.ts
 models/PickupRequest.ts
-models/ReceiptSubmitRequest.ts
-models/ReceiptVerifyRequest.ts
 models/RecycleListing.ts
 models/RecycleListingApplicant.ts
 models/index.ts

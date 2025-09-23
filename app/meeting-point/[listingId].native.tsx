@@ -1,6 +1,7 @@
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Button, SafeAreaView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, SafeAreaView, Text, TextInput, View } from 'react-native';
+import PressableButton from '../../components/PressableButton';
 import { MapView, Marker, Camera, Region } from 'expo-maps';
 import { useAuth } from '../AuthContext';
 import { useToast } from '../Toast';
@@ -28,7 +29,13 @@ function SearchBar(props: SearchBarProps) {
         style={{ flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 6, padding: 8 }}
         editable={canEdit}
       />
-      <Button title={searching ? 'Søger…' : 'Søg'} onPress={onSearch} disabled={!canEdit || searching || !query.trim()} />
+      <PressableButton
+        title={searching ? 'Søger…' : 'Søg'}
+        onPress={onSearch}
+        disabled={!canEdit || searching || !query.trim()}
+        color="#6b7280"
+        iconName="search-outline"
+      />
     </View>
   );
 }
@@ -43,7 +50,13 @@ function Footer({ pin, canEdit, onSave, saving }: { readonly pin: MeetingPin | n
         </Text>
       ) : null}
       {canEdit ? (
-        <Button title={saving ? 'Gemmer…' : 'Gem mødested'} onPress={onSave} disabled={!pin || saving} />
+        <PressableButton
+          title={saving ? 'Gemmer…' : 'Gem mødested'}
+          onPress={onSave}
+          disabled={!pin || saving}
+          color="#10b981"
+          iconName="save-outline"
+        />
       ) : null}
     </View>
   );

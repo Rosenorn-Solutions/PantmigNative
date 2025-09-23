@@ -1,5 +1,6 @@
 import { Redirect, useRouter } from "expo-router";
-import { ActivityIndicator, Button, Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
+import PressableButton from "../components/PressableButton";
 import { useAuth } from "./AuthContext";
 import { useToast } from "./Toast";
 
@@ -29,17 +30,17 @@ export default function Index() {
       {user?.cityName && (
         <Text style={{ marginTop: -12, marginBottom: 20, color: '#555' }}>Din by: {user.cityName}</Text>
       )}
-      <Button title="Se tilgængelige opslag" onPress={() => router.push("./listings")} />
+      <PressableButton title="Se tilgængelige opslag" onPress={() => router.push("./listings")} color="#2563eb" iconName="list-outline" />
       {user?.role === 'Recycler' && (
-        <Button title="Mine ansøgninger" onPress={() => router.push("./my-applications")} />
+        <PressableButton title="Mine ansøgninger" onPress={() => router.push("./my-applications")} color="#6b7280" iconName="document-text-outline" />
       )}
       {user?.role === 'Donator' && (
         <>
-          <Button title="Opret opslag" onPress={() => router.push("./create-listing")} />
-          <Button title="Mine opslag" onPress={() => router.push("./my-listings")} />
+          <PressableButton title="Opret opslag" onPress={() => router.push("./create-listing")} color="#16a34a" iconName="add-circle-outline" />
+          <PressableButton title="Mine opslag" onPress={() => router.push("./my-listings")} color="#6b7280" iconName="albums-outline" />
         </>
       )}
-  <Button title="Log ud" color="#dc2626" onPress={async () => { await logout(); show('Du er nu logget ud', 'success'); }} />
+  <PressableButton title="Log ud" color="#dc2626" onPress={async () => { await logout(); show('Du er nu logget ud', 'success'); }} iconName="log-out-outline" />
     </View>
   );
 }

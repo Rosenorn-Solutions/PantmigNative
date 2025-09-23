@@ -23,8 +23,6 @@ import type {
   MeetingPointRequest,
   PickupConfirmRequest,
   PickupRequest,
-  ReceiptSubmitRequest,
-  ReceiptVerifyRequest,
   RecycleListing,
 } from '../models/index';
 import {
@@ -44,10 +42,6 @@ import {
     PickupConfirmRequestToJSON,
     PickupRequestFromJSON,
     PickupRequestToJSON,
-    ReceiptSubmitRequestFromJSON,
-    ReceiptSubmitRequestToJSON,
-    ReceiptVerifyRequestFromJSON,
-    ReceiptVerifyRequestToJSON,
     RecycleListingFromJSON,
     RecycleListingToJSON,
 } from '../models/index';
@@ -88,18 +82,10 @@ export interface ListingsPickupRequestRequest {
     pickupRequest: PickupRequest;
 }
 
-export interface ListingsReceiptSubmitRequest {
-    receiptSubmitRequest: ReceiptSubmitRequest;
-}
-
 export interface ListingsReceiptUploadRequest {
     listingId: number;
     reportedAmount: number;
     file: Blob;
-}
-
-export interface ListingsReceiptVerifyRequest {
-    receiptVerifyRequest: ReceiptVerifyRequest;
 }
 
 /**
@@ -519,8 +505,8 @@ export class RecycleListingsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Recycler confirms that the pickup has been performed.
-     * Confirm pickup
+     * Donator confirms that the pickup has been performed (after chat and meeting point). This completes the listing.
+     * Confirm pickup and complete listing
      */
     async listingsPickupConfirmRaw(requestParameters: ListingsPickupConfirmRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
         if (requestParameters['pickupConfirmRequest'] == null) {
@@ -555,8 +541,8 @@ export class RecycleListingsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Recycler confirms that the pickup has been performed.
-     * Confirm pickup
+     * Donator confirms that the pickup has been performed (after chat and meeting point). This completes the listing.
+     * Confirm pickup and complete listing
      */
     async listingsPickupConfirm(requestParameters: ListingsPickupConfirmRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.listingsPickupConfirmRaw(requestParameters, initOverrides);
@@ -607,51 +593,7 @@ export class RecycleListingsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Recycler submits the receipt image URL and reported amount for the listing.
-     * Submit receipt
-     */
-    async listingsReceiptSubmitRaw(requestParameters: ListingsReceiptSubmitRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters['receiptSubmitRequest'] == null) {
-            throw new runtime.RequiredError(
-                'receiptSubmitRequest',
-                'Required parameter "receiptSubmitRequest" was null or undefined when calling listingsReceiptSubmit().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (this.configuration && this.configuration.apiKey) {
-            headerParameters["Authorization"] = await this.configuration.apiKey("Authorization"); // Bearer authentication
-        }
-
-
-        let urlPath = `/listings/receipt/submit`;
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: ReceiptSubmitRequestToJSON(requestParameters['receiptSubmitRequest']),
-        }, initOverrides);
-
-        return new runtime.VoidApiResponse(response);
-    }
-
-    /**
-     * Recycler submits the receipt image URL and reported amount for the listing.
-     * Submit receipt
-     */
-    async listingsReceiptSubmit(requestParameters: ListingsReceiptSubmitRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.listingsReceiptSubmitRaw(requestParameters, initOverrides);
-    }
-
-    /**
-     * Recycler uploads the receipt image as multipart/form-data with fields: listingId, reportedAmount, file.
+     * Recycler uploads the receipt image as multipart/form-data with fields: listingId, reportedAmount, file. This does not affect listing status and is available even after completion.
      * Upload receipt image
      */
     async listingsReceiptUploadRaw(requestParameters: ListingsReceiptUploadRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
@@ -727,55 +669,11 @@ export class RecycleListingsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Recycler uploads the receipt image as multipart/form-data with fields: listingId, reportedAmount, file.
+     * Recycler uploads the receipt image as multipart/form-data with fields: listingId, reportedAmount, file. This does not affect listing status and is available even after completion.
      * Upload receipt image
      */
     async listingsReceiptUpload(requestParameters: ListingsReceiptUploadRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.listingsReceiptUploadRaw(requestParameters, initOverrides);
-    }
-
-    /**
-     * Donator verifies the receipt amount reported by the recycler.
-     * Verify receipt amount
-     */
-    async listingsReceiptVerifyRaw(requestParameters: ListingsReceiptVerifyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters['receiptVerifyRequest'] == null) {
-            throw new runtime.RequiredError(
-                'receiptVerifyRequest',
-                'Required parameter "receiptVerifyRequest" was null or undefined when calling listingsReceiptVerify().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (this.configuration && this.configuration.apiKey) {
-            headerParameters["Authorization"] = await this.configuration.apiKey("Authorization"); // Bearer authentication
-        }
-
-
-        let urlPath = `/listings/receipt/verify`;
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: ReceiptVerifyRequestToJSON(requestParameters['receiptVerifyRequest']),
-        }, initOverrides);
-
-        return new runtime.VoidApiResponse(response);
-    }
-
-    /**
-     * Donator verifies the receipt amount reported by the recycler.
-     * Verify receipt amount
-     */
-    async listingsReceiptVerify(requestParameters: ListingsReceiptVerifyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.listingsReceiptVerifyRaw(requestParameters, initOverrides);
     }
 
 }

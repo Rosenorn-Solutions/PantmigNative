@@ -1,7 +1,9 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { Redirect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Button, FlatList, RefreshControl, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import PressableButton from '../components/PressableButton';
 import { ListingStatus } from './apis/pantmig-api/models/ListingStatus';
 import type { RecycleListing } from './apis/pantmig-api/models/RecycleListing';
 import { useAuth } from './AuthContext';
@@ -119,36 +121,65 @@ export default function MyListingsScreen() {
                   Status: {getListingStatusView(item).label}
                 </Text>
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-                  <Button
-                    title="Se ansøgere"
-                    disabled={isFinal || hasAssigned}
-                    onPress={() => {
-                      if (isFinal || hasAssigned) return;
-                      router.push({ pathname: '/listing-applicants', params: { id: String(item.id) } } as any);
-                    }}
-                  />
-                  <Button
+                  {!item.assignedRecyclerUserId ? (
+                    <PressableButton
+                      title="Se ansøgere"
+                      disabled={isFinal || hasAssigned}
+                      onPress={() => {
+                        if (isFinal || hasAssigned) return;
+                        router.push({ pathname: '/listing-applicants', params: { id: String(item.id) } } as any);
+                      }}
+                      color="#6b7280"
+                      iconName="people-outline"
+                    />
+                  ) : null}
+                  {item.assignedRecyclerUserId ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      disabled={chatBusy === item.id || isFinal}
+                      onPress={() => openChat(item)}
+                      style={({ pressed }) => ({
+                        backgroundColor: '#2563eb',
+                        opacity: (chatBusy === item.id || isFinal) ? 0.5 : (pressed ? 0.85 : 1),
+                        paddingHorizontal: 12,
+                        paddingVertical: 10,
+                        borderRadius: 8,
+                        flexDirection: 'row',
+                        alignItems: 'center'
+                      })}
+                    >
+                      <Ionicons name="chatbubble-ellipses-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
+                      <Text style={{ color: '#fff', fontWeight: '600' }}>{chatBusy === item.id ? 'Åbner…' : 'Chat'}</Text>
+                    </Pressable>
+                  ) : null}
+                  {item.chatSessionId ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      disabled={isFinal && (item.meetingLatitude == null || item.meetingLongitude == null)}
+                      onPress={() => router.push({ pathname: '/meeting-point/[listingId]', params: { listingId: String(item.id), readonly: isFinal ? '1' : '0' } } as any)}
+                      style={({ pressed }) => ({
+                        backgroundColor: '#050f96ff',
+                        opacity: (isFinal && (item.meetingLatitude == null || item.meetingLongitude == null)) ? 0.5 : (pressed ? 0.85 : 1),
+                        paddingHorizontal: 12,
+                        paddingVertical: 10,
+                        borderRadius: 8,
+                        flexDirection: 'row',
+                        alignItems: 'center'
+                      })}
+                    >
+                      <Ionicons name="location-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
+                      <Text style={{ color: '#fff', fontWeight: '600' }}>
+                        {(item.meetingLatitude != null && item.meetingLongitude != null) ? 'Mødested' : 'Sæt mødested'}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                  <PressableButton
                     title={busy === item.id ? 'Annullerer…' : 'Annullér'}
                     color="#dc2626"
                     onPress={() => cancelListing(item)}
                     disabled={busy === item.id || isFinal}
+                    iconName="close-circle-outline"
                   />
-                  {item.assignedRecyclerUserId ? (
-                    <Button
-                      title={chatBusy === item.id ? 'Åbner…' : 'Chat'}
-                      onPress={() => openChat(item)}
-                      disabled={chatBusy === item.id || isFinal}
-                      color="#2563eb"
-                    />
-                  ) : null}
-                  {item.chatSessionId ? (
-                    <Button
-                      title={(item.meetingLatitude != null && item.meetingLongitude != null) ? 'Mødested' : 'Sæt mødested'}
-                      onPress={() => router.push({ pathname: '/meeting-point/[listingId]', params: { listingId: String(item.id), readonly: isFinal ? '1' : '0' } } as any)}
-                      color="#050f96ff"
-                      disabled={isFinal && (item.meetingLatitude == null || item.meetingLongitude == null)}
-                    />
-                  ) : null}
                 </View>
               </View>
             );

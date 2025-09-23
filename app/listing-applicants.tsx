@@ -1,6 +1,7 @@
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Button, FlatList, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Text, View } from 'react-native';
+import PressableButton from '../components/PressableButton';
 import type { ApplicantInfo } from './apis/pantmig-api/models/ApplicantInfo';
 import { useAuth } from './AuthContext';
 import { authApi, createRecycleListingsApi } from './services/api';
@@ -175,7 +176,7 @@ export default function ListingApplicantsScreen() {
                   <Text style={{ color: '#666', marginTop: 2 }}>{ratingText}</Text>
                   <Text style={{ color: '#666', marginTop: 2 }}>Ansøgt: {when}</Text>
                 </View>
-                <Button title={isItemBusy ? 'Vælger…' : 'Vælg'} onPress={() => selectApplicant(id)} disabled={isItemBusy} />
+                <PressableButton title={isItemBusy ? 'Vælger…' : 'Vælg'} onPress={() => selectApplicant(id)} disabled={isItemBusy} color="#16a34a" iconName="checkmark-done-outline" />
               </View>
             );
           }}

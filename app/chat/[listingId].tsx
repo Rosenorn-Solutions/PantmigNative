@@ -2,7 +2,8 @@ import * as signalR from '@microsoft/signalr';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Button, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, Text, TextInput, View } from 'react-native';
+import PressableButton from '../../components/PressableButton';
 import { useAuth } from '../AuthContext';
 import { useToast } from '../Toast';
 import type { RecycleListing } from '../apis/pantmig-api/models/RecycleListing';
@@ -252,11 +253,11 @@ export default function ListingChatScreen() {
             return (
               <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
                 <Text style={{ color: 'red', marginBottom: 12 }}>{connectionError}</Text>
-                <Button title="Prøv igen" onPress={() => {
+                <PressableButton title="Prøv igen" onPress={() => {
                   const c = connectionRef.current; if (c) { c.stop(); }
                   connectionRef.current = null;
                   setConnecting(true); // effect will reconnect
-                }} />
+                }} color="#2563eb" iconName="refresh-outline" />
               </View>
             );
           }
@@ -304,7 +305,7 @@ export default function ListingChatScreen() {
             style={{ flex: 1, padding: 8, borderWidth: 1, borderColor: '#ddd', borderRadius: 6, marginRight: 8 }}
             editable={!connecting && !connectionError}
           />
-          <Button title="Send" onPress={send} disabled={!input.trim() || connecting || !!connectionError} />
+          <PressableButton title="Send" onPress={send} disabled={!input.trim() || connecting || !!connectionError} color="#16a34a" iconName="send-outline" />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

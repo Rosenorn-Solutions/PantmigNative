@@ -11,7 +11,5 @@ export * from './ListingStatus';
 export * from './MeetingPointRequest';
 export * from './PickupConfirmRequest';
 export * from './PickupRequest';
-export * from './ReceiptSubmitRequest';
-export * from './ReceiptVerifyRequest';
 export * from './RecycleListing';
 export * from './RecycleListingApplicant';
