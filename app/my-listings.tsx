@@ -130,55 +130,33 @@ export default function MyListingsScreen() {
                         router.push({ pathname: '/listing-applicants', params: { id: String(item.id) } } as any);
                       }}
                       color="#6b7280"
-                      iconName="people-outline"
+                      iconName="user-group"
                     />
                   ) : null}
                   {item.assignedRecyclerUserId ? (
-                    <Pressable
-                      accessibilityRole="button"
-                      disabled={chatBusy === item.id || isFinal}
+                    <PressableButton
+                      title={chatBusy === item.id ? 'Åbner…' : (isFinal ? 'Chat (afsluttet)' : 'Chat')}
                       onPress={() => openChat(item)}
-                      style={({ pressed }) => ({
-                        backgroundColor: '#2563eb',
-                        opacity: (chatBusy === item.id || isFinal) ? 0.5 : (pressed ? 0.85 : 1),
-                        paddingHorizontal: 12,
-                        paddingVertical: 10,
-                        borderRadius: 8,
-                        flexDirection: 'row',
-                        alignItems: 'center'
-                      })}
-                    >
-                      <Ionicons name="chatbubble-ellipses-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
-                      <Text style={{ color: '#fff', fontWeight: '600' }}>{chatBusy === item.id ? 'Åbner…' : 'Chat'}</Text>
-                    </Pressable>
+                      disabled={chatBusy === item.id || isFinal}
+                      color="#2563eb"
+                      iconName="comments"
+                    />
                   ) : null}
                   {item.chatSessionId ? (
-                    <Pressable
-                      accessibilityRole="button"
-                      disabled={isFinal && (item.meetingLatitude == null || item.meetingLongitude == null)}
+                    <PressableButton
+                      title={(item.meetingLatitude != null && item.meetingLongitude != null) ? 'Mødested' : 'Sæt mødested'}
+                      disabled={isFinal}
                       onPress={() => router.push({ pathname: '/meeting-point/[listingId]', params: { listingId: String(item.id), readonly: isFinal ? '1' : '0' } } as any)}
-                      style={({ pressed }) => ({
-                        backgroundColor: '#050f96ff',
-                        opacity: (isFinal && (item.meetingLatitude == null || item.meetingLongitude == null)) ? 0.5 : (pressed ? 0.85 : 1),
-                        paddingHorizontal: 12,
-                        paddingVertical: 10,
-                        borderRadius: 8,
-                        flexDirection: 'row',
-                        alignItems: 'center'
-                      })}
-                    >
-                      <Ionicons name="location-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
-                      <Text style={{ color: '#fff', fontWeight: '600' }}>
-                        {(item.meetingLatitude != null && item.meetingLongitude != null) ? 'Mødested' : 'Sæt mødested'}
-                      </Text>
-                    </Pressable>
+                      color="#050f96ff"
+                      iconName="location-dot"
+                    />
                   ) : null}
                   <PressableButton
                     title={busy === item.id ? 'Annullerer…' : 'Annullér'}
                     color="#dc2626"
                     onPress={() => cancelListing(item)}
                     disabled={busy === item.id || isFinal}
-                    iconName="close-circle-outline"
+                    iconName="circle-minus"
                   />
                 </View>
               </View>

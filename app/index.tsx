@@ -22,25 +22,28 @@ export default function Index() {
   }
 
   return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: 16 }}>
-      <Text style={{ marginBottom: 4 }}>Velkommen! Vælg en handling:</Text>
-      {user?.role && (
+    <View style={{ flexGrow: 1, padding: 24, gap: 12, maxWidth: '100%', alignSelf: 'center', justifyContent: 'center', width: 480  }}>
+      <Text style={{ marginBottom: 4 }}>Hej {user?.firstName} Vælg en handling:</Text>
+      {/* {user?.role && (
         <Text style={{ marginBottom: 20, color: '#555' }}>Din rolle: {user.role == 'Donator' ? 'Donor' : 'Panter'}</Text>
       )}
       {user?.cityName && (
         <Text style={{ marginTop: -12, marginBottom: 20, color: '#555' }}>Din by: {user.cityName}</Text>
-      )}
-      <PressableButton title="Se tilgængelige opslag" onPress={() => router.push("./listings")} color="#2563eb" iconName="list-outline" />
+      )} */}
+      
       {user?.role === 'Recycler' && (
-        <PressableButton title="Mine ansøgninger" onPress={() => router.push("./my-applications")} color="#6b7280" iconName="document-text-outline" />
+        <>
+          <PressableButton title="Se tilgængelige opslag" onPress={() => router.push("./listings")} color="#2563eb" iconName="list" />
+          <PressableButton title="Mine ansøgninger" onPress={() => router.push("./my-applications")} color="#6b7280" iconName="clipboard" />
+        </>
       )}
       {user?.role === 'Donator' && (
         <>
-          <PressableButton title="Opret opslag" onPress={() => router.push("./create-listing")} color="#16a34a" iconName="add-circle-outline" />
-          <PressableButton title="Mine opslag" onPress={() => router.push("./my-listings")} color="#6b7280" iconName="albums-outline" />
+          <PressableButton title="Opret opslag" onPress={() => router.push("./create-listing")} color="#16a34a" iconName="file-circle-plus" />
+          <PressableButton title="Mine opslag" onPress={() => router.push("./my-listings")} color="#6b7280" iconName="folder-open" />
         </>
       )}
-  <PressableButton title="Log ud" color="#dc2626" onPress={async () => { await logout(); show('Du er nu logget ud', 'success'); }} iconName="log-out-outline" />
+  <PressableButton title="Log ud" color="#dc2626" onPress={async () => { await logout(); show('Du er nu logget ud', 'success'); }} iconName="arrow-right-from-bracket" />
     </View>
   );
 }

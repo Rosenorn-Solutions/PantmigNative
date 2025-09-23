@@ -224,7 +224,7 @@ export default function MeetingPointScreen() {
           <Text style={{ marginTop: 8 }}>Henter opslag…</Text>
         </View>
       ) : (
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, width: '100%', alignSelf: 'center', maxWidth: 900 }}>
           <SearchBar query={query} setQuery={setQuery} onSearch={searchPlace} searching={searching} canEdit={canEdit} />
           <SuggestionsList
             suggestions={suggestions}

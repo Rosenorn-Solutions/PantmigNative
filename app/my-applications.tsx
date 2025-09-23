@@ -92,7 +92,7 @@ export default function MyApplicationsScreen() {
                       }}
                       disabled={isFinal}
                       color="#2563eb"
-                      iconName="chatbubble-ellipses-outline"
+                      iconName="comments"
                     />
                   ) : null}
                   {item.meetingLatitude != null && item.meetingLongitude != null ? (
@@ -103,8 +103,8 @@ export default function MyApplicationsScreen() {
                         router.push({ pathname: '/meeting-point/[listingId]', params: { listingId: String(item.id) } } as any);
                       }}
                       disabled={isFinal}
-                      color="#10b981"
-                      iconName="location-outline"
+                      color="#050f96ff"
+                      iconName="location-dot"
                     />
                   ) : null}
                   {pickupConfirmed ? (
@@ -114,7 +114,7 @@ export default function MyApplicationsScreen() {
                         router.push({ pathname: '/receipt-upload/[listingId]', params: { listingId: String(item.id) } } as any);
                       }}
                       color="#7c3aed"
-                      iconName="receipt-outline"
+                      iconName="file-lines"
                     />
                   ) : null}
                 </View>

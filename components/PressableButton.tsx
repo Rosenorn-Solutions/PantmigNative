@@ -9,6 +9,7 @@ export type PressableButtonProps = {
   color?: string;
   disabled?: boolean;
   iconName?: string;
+  iconPosition?: 'left' | 'right';
   accessibilityLabel?: string;
   testID?: string;
   style?: ViewStyle | ((state: { pressed: boolean }) => ViewStyle);
@@ -20,10 +21,19 @@ export function PressableButton({
   color = '#2563eb',
   disabled,
   iconName,
+  iconPosition = 'left',
   accessibilityLabel,
   testID,
   style,
 }: PressableButtonProps) {
+  const renderIcon = (pos: 'left' | 'right') => (
+    <FontAwesome6
+      name={iconName as any}
+      size={18}
+      color="#fff"
+      style={{ marginRight: pos === 'left' ? 6 : 0, marginLeft: pos === 'right' ? 6 : 0 }}
+    />
+  );
   return (
     <Pressable
       accessibilityRole="button"
@@ -46,8 +56,10 @@ export function PressableButton({
         return base;
       }}
     >
-      {iconName ? <Ionicons name={iconName as any} size={18} color="#fff" style={{ marginRight: 6 }} /> : null}
+      {iconName && iconPosition === 'left' ? renderIcon('left') : null}
+      {/* {iconName ? <Ionicons name={iconName as any} size={18} color="#fff" style={{ marginRight: 6 }} /> : null} */}
       <Text style={{ color: '#fff', fontWeight: '600' }}>{title}</Text>
+      {iconName && iconPosition === 'right' ? renderIcon('right') : null}
     </Pressable>
   );
 }

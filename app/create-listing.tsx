@@ -40,6 +40,7 @@ export default function CreateListingScreen() {
   const [fromTimeStr, setFromTimeStr] = useState<string>('');
   const [toDateStr, setToDateStr] = useState<string>('');
   const [toTimeStr, setToTimeStr] = useState<string>('');
+  const [step, setStep] = useState<number>(0);
 
   const updateField = (key: keyof CreateRecycleListingRequest, value: any) =>
     setForm((f: CreateRecycleListingRequest) => ({ ...f, [key]: value }));
@@ -99,6 +100,33 @@ export default function CreateListingScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const validateStep = (s: number) => {
+    const next: Record<string, string> = {};
+    if (s === 0) {
+      if (!form.title?.trim()) next.title = 'Titel er påkrævet';
+      if (!form.description?.trim()) next.description = 'Beskrivelse er påkrævet';
+      const cityVal = (form.city || cityQuery || '').trim();
+      if (!cityVal) next.city = 'By er påkrævet';
+    } else if (s === 1) {
+      if (!form.availableFrom) next.availableFrom = 'Startdato og tid er påkrævet';
+      if (!form.availableTo) next.availableTo = 'Slutdato og tid er påkrævet';
+      if (form.availableFrom && form.availableTo && form.availableFrom > form.availableTo) {
+        next.availableTo = 'Sluttid skal være efter starttid';
+      }
+    } else if (s === 2) {
+      if (form.estimatedValue != null) {
+        if (Number.isNaN(form.estimatedValue as any)) next.estimatedValue = 'Ugyldigt tal';
+        else if (form.estimatedValue < 0) next.estimatedValue = 'Skal være >= 0';
+      }
+      if (form.estimatedAmount != null) {
+        const raw = String(form.estimatedAmount).trim();
+        if (raw && !/^[0-9]+$/.test(raw)) next.estimatedAmount = 'Kun tal er tilladt';
+      }
+    }
+    setErrors(next);
+    return Object.keys(next).length === 0;
   };
 
   // Debounced typeahead for city
@@ -255,167 +283,193 @@ export default function CreateListingScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>Opret opslag</Text>
-      <TextInput style={[styles.input, errors.title && styles.inputError]} placeholder="Titel" onChangeText={(t) => { updateField('title', t); if (errors.title) setErrors({ ...errors, title: '' }); }} />
-      {!!errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
-      <TextInput style={[styles.input, errors.description && styles.inputError]} placeholder="Beskrivelse" onChangeText={(t) => { updateField('description', t); if (errors.description) setErrors({ ...errors, description: '' }); }} />
-      {!!errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
-  <View style={[styles.typeaheadContainer, cityOpen && styles.typeaheadOpen]}>
-        <TextInput
-          style={[styles.input, errors.city && styles.inputError]}
-          placeholder="By"
-          value={cityQuery}
-          onChangeText={(t) => { setCityQuery(t); setCityOpen(!!t); updateField('city', ''); if (errors.city) setErrors({ ...errors, city: '' }); }}
-          onFocus={() => { if (cityResults.length > 0) setCityOpen(true); }}
-          onBlur={() => {
-            setTimeout(() => {
-              if (!selectingRef.current) { setCityOpen(false); setCityResults([]); }
-            }, 100);
-          }}
-        />
-        {!!errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
-        {cityOpen && cityResults.length > 0 && (
-          <View style={styles.dropdown}>
-            {cityLoading && <Text style={styles.dropdownHint}>Søger...</Text>}
-            {!cityLoading && (
-              <ScrollView style={{ maxHeight: 240 }} keyboardShouldPersistTaps="handled">
-                {cityResults.map((c) => {
-                  const pcs = c.postalCodes?.slice(0, 3).join(', ');
-                  const hasMore = (c.postalCodes?.length ?? 0) > 3;
-                  let suffix = '';
-                  if (pcs && pcs.length > 0) suffix = ` (${pcs}${hasMore ? '…' : ''})`;
-                  return (
-          <Pressable
-                      key={c.id}
-                      onPressIn={() => { selectingRef.current = true; }}
-                      onPress={() => {
-            suppressNextSearchRef.current = true;
-                        updateField('city', c.name || '');
-                        setCityQuery(c.name || '');
-                        setCityOpen(false);
-                        setCityResults([]);
-                        setTimeout(() => { selectingRef.current = false; }, 0);
-                      }}
-                      style={({ pressed }) => [styles.dropdownItem, pressed && styles.dropdownItemPressed]}
-                    >
-                      <Text style={styles.dropdownText}>{c.name}{suffix}</Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
+      <Text style={styles.stepIndicator}>Trin {step + 1} af 3</Text>
+
+      {step === 0 && (
+        <>
+          <TextInput style={[styles.input, errors.title && styles.inputError]} placeholder="Titel" onChangeText={(t) => { updateField('title', t); if (errors.title) setErrors({ ...errors, title: '' }); }} />
+          {!!errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
+          <TextInput style={[styles.input, errors.description && styles.inputError]} placeholder="Beskrivelse" onChangeText={(t) => { updateField('description', t); if (errors.description) setErrors({ ...errors, description: '' }); }} />
+          {!!errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
+          <View style={[styles.typeaheadContainer, cityOpen && styles.typeaheadOpen]}>
+            <TextInput
+              style={[styles.input, errors.city && styles.inputError]}
+              placeholder="By"
+              value={cityQuery}
+              onChangeText={(t) => { setCityQuery(t); setCityOpen(!!t); updateField('city', ''); if (errors.city) setErrors({ ...errors, city: '' }); }}
+              onFocus={() => { if (cityResults.length > 0) setCityOpen(true); }}
+              onBlur={() => {
+                setTimeout(() => {
+                  if (!selectingRef.current) { setCityOpen(false); setCityResults([]); }
+                }, 100);
+              }}
+            />
+            {!!errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
+            {cityOpen && cityResults.length > 0 && (
+              <View style={styles.dropdown}>
+                {cityLoading && <Text style={styles.dropdownHint}>Søger...</Text>}
+                {!cityLoading && (
+                  <ScrollView style={{ maxHeight: 240 }} keyboardShouldPersistTaps="handled">
+                    {cityResults.map((c) => {
+                      const pcs = c.postalCodes?.slice(0, 3).join(', ');
+                      const hasMore = (c.postalCodes?.length ?? 0) > 3;
+                      let suffix = '';
+                      if (pcs && pcs.length > 0) suffix = ` (${pcs}${hasMore ? '…' : ''})`;
+                      return (
+                        <Pressable
+                          key={c.id}
+                          onPressIn={() => { selectingRef.current = true; }}
+                          onPress={() => {
+                            suppressNextSearchRef.current = true;
+                            updateField('city', c.name || '');
+                            setCityQuery(c.name || '');
+                            setCityOpen(false);
+                            setCityResults([]);
+                            setTimeout(() => { selectingRef.current = false; }, 0);
+                          }}
+                          style={({ pressed }) => [styles.dropdownItem, pressed && styles.dropdownItemPressed]}
+                        >
+                          <Text style={styles.dropdownText}>{c.name}{suffix}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                )}
+              </View>
             )}
           </View>
-        )}
-      </View>
-      <TextInput style={styles.input} placeholder="Adresse (valgfrit)" onChangeText={(t) => updateField('location', t)} />
-      {/* Dates */}
-      {Platform.OS === 'web' ? (
-        <>
-          <View style={{ position: 'relative' }}>
-            <Pressable style={[styles.input, styles.dateInput, errors.availableFrom && styles.inputError]} onPress={() => setWebFromOpen(true)}>
-              <Text style={!form.availableFrom ? styles.placeholder : undefined}>{form.availableFrom ? `${datePart(form.availableFrom)} ${timePart(form.availableFrom)}` : 'Tilgængelig fra (krævet)'}</Text>
-            </Pressable>
-            {!!errors.availableFrom && <Text style={styles.errorText}>{errors.availableFrom}</Text>}
-          </View>
-          <View style={{ position: 'relative' }}>
-            <Pressable style={[styles.input, styles.dateInput, errors.availableTo && styles.inputError]} onPress={() => setWebToOpen(true)}>
-              <Text style={!form.availableTo ? styles.placeholder : undefined}>{form.availableTo ? `${datePart(form.availableTo)} ${timePart(form.availableTo)}` : 'Tilgængelig til (krævet)'}</Text>
-            </Pressable>
-            {!!errors.availableTo && <Text style={styles.errorText}>{errors.availableTo}</Text>}
-          </View>
-
-          {/* Web modals for date/time */}
-          <Modal visible={webFromOpen} transparent animationType="fade" onRequestClose={() => setWebFromOpen(false)}>
-            <View style={styles.webModalBackdrop}>
-              <View style={styles.webModalCard}>
-                <Text style={styles.webPickerLabel}>Dato (DD-MM-ÅÅÅÅ)</Text>
-                <TextInput style={styles.input} value={fromDateStr} placeholder="11-09-2025" onChangeText={setFromDateStr} />
-                <Text style={[styles.webPickerLabel, { marginTop: 8 }]}>Tid (TT:MM)</Text>
-                <TextInput style={styles.input} value={fromTimeStr} placeholder="14:30" onChangeText={setFromTimeStr} />
-                <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, justifyContent: 'flex-end' }}>
-                  <PressableButton title="Annuller" onPress={() => setWebFromOpen(false)} color="#6b7280" iconName="close-outline" />
-                  <PressableButton title="Vælg" onPress={() => {
-                    const d = parseLocal(fromDateStr, fromTimeStr);
-                    if (!d) { setErrors({ ...errors, availableFrom: 'Ugyldigt dato/tid-format' }); return; }
-                    updateField('availableFrom', d);
-                    setErrors({ ...errors, availableFrom: '' });
-                    shiftEndIfNeeded(d);
-                    setWebFromOpen(false);
-                  }} color="#16a34a" iconName="checkmark-outline" />
-                </View>
-              </View>
-            </View>
-          </Modal>
-
-          <Modal visible={webToOpen} transparent animationType="fade" onRequestClose={() => setWebToOpen(false)}>
-            <View style={styles.webModalBackdrop}>
-              <View style={styles.webModalCard}>
-                <Text style={styles.webPickerLabel}>Dato (DD-MM-ÅÅÅÅ)</Text>
-                <TextInput style={styles.input} value={toDateStr} placeholder="11-09-2025" onChangeText={setToDateStr} />
-                <Text style={[styles.webPickerLabel, { marginTop: 8 }]}>Tid (TT:MM)</Text>
-                <TextInput style={styles.input} value={toTimeStr} placeholder="15:45" onChangeText={setToTimeStr} />
-                <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, justifyContent: 'flex-end' }}>
-                  <PressableButton title="Annuller" onPress={() => setWebToOpen(false)} color="#6b7280" iconName="close-outline" />
-                  <PressableButton title="Vælg" onPress={() => {
-                    const d = parseLocal(toDateStr, toTimeStr);
-                    if (!d) { setErrors({ ...errors, availableTo: 'Ugyldigt dato/tid-format' }); return; }
-                    if (form.availableFrom && d <= form.availableFrom) { setErrors({ ...errors, availableTo: 'Sluttid skal være efter starttid' }); return; }
-                    updateField('availableTo', d);
-                    setErrors({ ...errors, availableTo: '' });
-                    setWebToOpen(false);
-                  }} color="#16a34a" iconName="checkmark-outline" />
-                </View>
-              </View>
-            </View>
-          </Modal>
-        </>
-      ) : (
-        <>
-          <View>
-            <Pressable style={[styles.input, styles.dateInput, errors.availableFrom && styles.inputError]} onPress={() => { setShowFromPicker(true); setShowFromTimePicker(false); }}>
-              <Text style={!form.availableFrom ? styles.placeholder : undefined}>{form.availableFrom ? `${datePart(form.availableFrom)} ${timePart(form.availableFrom)}` : 'Tilgængelig fra (krævet)'}</Text>
-            </Pressable>
-            {!!errors.availableFrom && <Text style={styles.errorText}>{errors.availableFrom}</Text>}
-            {renderFromPickers()}
-          </View>
-          <View>
-            <Pressable style={[styles.input, styles.dateInput, errors.availableTo && styles.inputError]} onPress={() => { setShowToPicker(true); setShowToTimePicker(false); }}>
-              <Text style={!form.availableTo ? styles.placeholder : undefined}>{form.availableTo ? `${datePart(form.availableTo)} ${timePart(form.availableTo)}` : 'Tilgængelig til (krævet)'}</Text>
-            </Pressable>
-            {!!errors.availableTo && <Text style={styles.errorText}>{errors.availableTo}</Text>}
-            {renderToPickers()}
+          <TextInput style={styles.input} placeholder="Adresse (valgfrit)" onChangeText={(t) => updateField('location', t)} />
+          <View style={styles.navRow}>
+            <PressableButton title="Fortryd" onPress={() => router.back()} color="#6b7280" iconName="arrow-left" style={styles.button} />
+            <PressableButton title="Næste" onPress={() => { if (validateStep(0)) setStep(1); }} color="#2563eb" iconName="arrow-right" style={styles.button} />
           </View>
         </>
       )}
-      <TextInput
-        style={[styles.input, errors.estimatedValue && styles.inputError]}
-        placeholder="Estimeret værdi (kr)"
-        keyboardType="numeric"
-        onChangeText={(t) => {
-          const num = t.replace(',', '.');
-          updateField('estimatedValue', num === '' ? undefined : Number(num));
-          if (errors.estimatedValue) setErrors({ ...errors, estimatedValue: '' });
-        }}
-      />
-      {!!errors.estimatedValue && <Text style={styles.errorText}>{errors.estimatedValue}</Text>}
-      <TextInput
-        style={[styles.input, errors.estimatedAmount && styles.inputError]}
-        placeholder="Estimeret antal"
-        keyboardType="numeric"
-        onChangeText={(t) => {
-          const cleaned = t.replace(/\D/g, '');
-          updateField('estimatedAmount', cleaned === '' ? undefined : cleaned); // keep as string per API
-          if (errors.estimatedAmount) setErrors({ ...errors, estimatedAmount: '' });
-        }}
-      />
-      {!!errors.estimatedAmount && <Text style={styles.errorText}>{errors.estimatedAmount}</Text>}
-  <PressableButton title={loading ? 'Opretter...' : 'Opret'} onPress={submit} disabled={loading} color="#2563eb" iconName="save-outline" />
+
+      {step === 1 && (
+        <>
+          {Platform.OS === 'web' ? (
+            <>
+              <View style={{ position: 'relative' }}>
+                <Pressable style={[styles.input, styles.dateInput, errors.availableFrom && styles.inputError]} onPress={() => setWebFromOpen(true)}>
+                  <Text style={!form.availableFrom ? styles.placeholder : undefined}>{form.availableFrom ? `${datePart(form.availableFrom)} ${timePart(form.availableFrom)}` : 'Tilgængelig fra (krævet)'}</Text>
+                </Pressable>
+                {!!errors.availableFrom && <Text style={styles.errorText}>{errors.availableFrom}</Text>}
+              </View>
+              <View style={{ position: 'relative' }}>
+                <Pressable style={[styles.input, styles.dateInput, errors.availableTo && styles.inputError]} onPress={() => setWebToOpen(true)}>
+                  <Text style={!form.availableTo ? styles.placeholder : undefined}>{form.availableTo ? `${datePart(form.availableTo)} ${timePart(form.availableTo)}` : 'Tilgængelig til (krævet)'}</Text>
+                </Pressable>
+                {!!errors.availableTo && <Text style={styles.errorText}>{errors.availableTo}</Text>}
+              </View>
+
+              <Modal visible={webFromOpen} transparent animationType="fade" onRequestClose={() => setWebFromOpen(false)}>
+                <View style={styles.webModalBackdrop}>
+                  <View style={styles.webModalCard}>
+                    <Text style={styles.webPickerLabel}>Dato (DD-MM-ÅÅÅÅ)</Text>
+                    <TextInput style={styles.input} value={fromDateStr} placeholder="11-09-2025" onChangeText={setFromDateStr} />
+                    <Text style={[styles.webPickerLabel, { marginTop: 8 }]}>Tid (TT:MM)</Text>
+                    <TextInput style={styles.input} value={fromTimeStr} placeholder="14:30" onChangeText={setFromTimeStr} />
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, justifyContent: 'flex-end' }}>
+                      <PressableButton title="Annuller" onPress={() => setWebFromOpen(false)} color="#6b7280" iconName="close-outline" />
+                      <PressableButton title="Vælg" onPress={() => {
+                        const d = parseLocal(fromDateStr, fromTimeStr);
+                        if (!d) { setErrors({ ...errors, availableFrom: 'Ugyldigt dato/tid-format' }); return; }
+                        updateField('availableFrom', d);
+                        setErrors({ ...errors, availableFrom: '' });
+                        shiftEndIfNeeded(d);
+                        setWebFromOpen(false);
+                      }} color="#16a34a" iconName="checkmark-outline" />
+                    </View>
+                  </View>
+                </View>
+              </Modal>
+
+              <Modal visible={webToOpen} transparent animationType="fade" onRequestClose={() => setWebToOpen(false)}>
+                <View style={styles.webModalBackdrop}>
+                  <View style={styles.webModalCard}>
+                    <Text style={styles.webPickerLabel}>Dato (DD-MM-ÅÅÅÅ)</Text>
+                    <TextInput style={styles.input} value={toDateStr} placeholder="11-09-2025" onChangeText={setToDateStr} />
+                    <Text style={[styles.webPickerLabel, { marginTop: 8 }]}>Tid (TT:MM)</Text>
+                    <TextInput style={styles.input} value={toTimeStr} placeholder="15:45" onChangeText={setToTimeStr} />
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, justifyContent: 'flex-end' }}>
+                      <PressableButton title="Annuller" onPress={() => setWebToOpen(false)} color="#6b7280" iconName="close-outline" />
+                      <PressableButton title="Vælg" onPress={() => {
+                        const d = parseLocal(toDateStr, toTimeStr);
+                        if (!d) { setErrors({ ...errors, availableTo: 'Ugyldigt dato/tid-format' }); return; }
+                        if (form.availableFrom && d <= form.availableFrom) { setErrors({ ...errors, availableTo: 'Sluttid skal være efter starttid' }); return; }
+                        updateField('availableTo', d);
+                        setErrors({ ...errors, availableTo: '' });
+                        setWebToOpen(false);
+                      }} color="#16a34a" iconName="checkmark-outline" />
+                    </View>
+                  </View>
+                </View>
+              </Modal>
+            </>
+          ) : (
+            <>
+              <View>
+                <Pressable style={[styles.input, styles.dateInput, errors.availableFrom && styles.inputError]} onPress={() => { setShowFromPicker(true); setShowFromTimePicker(false); }}>
+                  <Text style={!form.availableFrom ? styles.placeholder : undefined}>{form.availableFrom ? `${datePart(form.availableFrom)} ${timePart(form.availableFrom)}` : 'Tilgængelig fra (krævet)'}</Text>
+                </Pressable>
+                {!!errors.availableFrom && <Text style={styles.errorText}>{errors.availableFrom}</Text>}
+                {renderFromPickers()}
+              </View>
+              <View>
+                <Pressable style={[styles.input, styles.dateInput, errors.availableTo && styles.inputError]} onPress={() => { setShowToPicker(true); setShowToTimePicker(false); }}>
+                  <Text style={!form.availableTo ? styles.placeholder : undefined}>{form.availableTo ? `${datePart(form.availableTo)} ${timePart(form.availableTo)}` : 'Tilgængelig til (krævet)'}</Text>
+                </Pressable>
+                {!!errors.availableTo && <Text style={styles.errorText}>{errors.availableTo}</Text>}
+                {renderToPickers()}
+              </View>
+            </>
+          )}
+          <View style={styles.navRow}>
+            <PressableButton title="Tilbage" onPress={() => setStep(0)} color="#6b7280" iconName="arrow-left" style={styles.button} />
+            <PressableButton title="Næste" onPress={() => { if (validateStep(1)) setStep(2); }} color="#2563eb" iconName="arrow-right" iconPosition="right" style={styles.button} />
+          </View>
+        </>
+      )}
+
+      {step === 2 && (
+        <>
+          <TextInput
+            style={[styles.input, errors.estimatedValue && styles.inputError]}
+            placeholder="Estimeret værdi (kr)"
+            keyboardType="numeric"
+            onChangeText={(t) => {
+              const num = t.replace(',', '.');
+              updateField('estimatedValue', num === '' ? undefined : Number(num));
+              if (errors.estimatedValue) setErrors({ ...errors, estimatedValue: '' });
+            }}
+          />
+          {!!errors.estimatedValue && <Text style={styles.errorText}>{errors.estimatedValue}</Text>}
+          <TextInput
+            style={[styles.input, errors.estimatedAmount && styles.inputError]}
+            placeholder="Estimeret antal"
+            keyboardType="numeric"
+            onChangeText={(t) => {
+              const cleaned = t.replace(/\D/g, '');
+              updateField('estimatedAmount', cleaned === '' ? undefined : cleaned);
+              if (errors.estimatedAmount) setErrors({ ...errors, estimatedAmount: '' });
+            }}
+          />
+          {!!errors.estimatedAmount && <Text style={styles.errorText}>{errors.estimatedAmount}</Text>}
+          <View style={styles.navRow}>
+            <PressableButton title="Tilbage" onPress={() => setStep(1)} color="#6b7280" iconName="arrow-left" style={styles.button} />
+            <PressableButton title={loading ? 'Opretter...' : 'Opret'} onPress={() => { if (validateStep(2)) submit(); }} disabled={loading} color="#16a34a" iconName="save" style={styles.button} />
+          </View>
+        </>
+      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: 16, gap: 12, maxWidth: '100%', alignSelf: 'center' },
+  container: { flexGrow: 1, padding: 24, gap: 12, maxWidth: '100%', alignSelf: 'center', justifyContent: 'center', width: 480 },
   title: { fontSize: 22, fontWeight: '600', marginBottom: 12 },
+  stepIndicator: { color: '#6b7280', marginTop: -8, marginBottom: 8 },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12 },
   inputError: { borderColor: '#dc2626' },
   errorText: { color: '#dc2626', fontSize: 12, marginTop: -6, marginBottom: 8 },
@@ -481,4 +535,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 12,
   },
+  button: {
+    justifyContent: 'center',
+  },
+  navRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, marginTop: 8 },
 });

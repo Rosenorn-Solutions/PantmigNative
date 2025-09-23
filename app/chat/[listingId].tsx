@@ -239,7 +239,7 @@ export default function ListingChatScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, width: '100%', alignSelf: 'center', maxWidth: 900, paddingHorizontal: 12 }}>
         {(() => {
           if (connecting) {
             return (
@@ -294,20 +294,20 @@ export default function ListingChatScreen() {
             />
           );
         })()}
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={80}>
+          <View style={{ flexDirection: 'row', padding: 8, borderTopWidth: 1, borderColor: '#e5e7eb', backgroundColor: 'white' }}>
+            <TextInput
+              placeholder="Skriv en besked"
+              value={input}
+              onChangeText={setInput}
+              onSubmitEditing={send}
+              style={{ flex: 1, padding: 8, borderWidth: 1, borderColor: '#ddd', borderRadius: 6, marginRight: 8 }}
+              editable={!connecting && !connectionError}
+            />
+            <PressableButton title="Send" onPress={send} disabled={!input.trim() || connecting || !!connectionError} color="#16a34a" iconName="arrow-right" />
+          </View>
+        </KeyboardAvoidingView>
       </View>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={80}>
-        <View style={{ flexDirection: 'row', padding: 8, borderTopWidth: 1, borderColor: '#e5e7eb', backgroundColor: 'white' }}>
-          <TextInput
-            placeholder="Skriv en besked"
-            value={input}
-            onChangeText={setInput}
-            onSubmitEditing={send}
-            style={{ flex: 1, padding: 8, borderWidth: 1, borderColor: '#ddd', borderRadius: 6, marginRight: 8 }}
-            editable={!connecting && !connectionError}
-          />
-          <PressableButton title="Send" onPress={send} disabled={!input.trim() || connecting || !!connectionError} color="#16a34a" iconName="send-outline" />
-        </View>
-      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

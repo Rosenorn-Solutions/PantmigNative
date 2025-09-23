@@ -13,13 +13,13 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
   const [message, setMessage] = useState<string | null>(null);
   const [type, setType] = useState<ToastType>('info');
   const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(20)).current;
+  const translateY = useRef(new Animated.Value(-20)).current;
   const hideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hide = useCallback(() => {
     Animated.parallel([
       Animated.timing(opacity, { toValue: 0, duration: 180, useNativeDriver: true, easing: Easing.out(Easing.quad) }),
-      Animated.timing(translateY, { toValue: 20, duration: 180, useNativeDriver: true, easing: Easing.out(Easing.quad) }),
+      Animated.timing(translateY, { toValue: -20, duration: 180, useNativeDriver: true, easing: Easing.out(Easing.quad) }),
     ]).start(() => setMessage(null));
   }, [opacity, translateY]);
 
@@ -28,7 +28,7 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
     setMessage(msg);
     setType(t);
     opacity.setValue(0);
-    translateY.setValue(20);
+    translateY.setValue(-20);
     Animated.parallel([
       Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }),
       Animated.timing(translateY, { toValue: 0, duration: 180, useNativeDriver: true }),
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 40,
+    top: 40,
     alignItems: 'center',
   },
   toast: {

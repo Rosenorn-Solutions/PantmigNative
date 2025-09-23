@@ -235,28 +235,26 @@ export default function RegisterScreen() {
           <PressableButton
             title={`Donor${userType === UserType.NUMBER_0 ? ' ✓' : ''}`}
             onPress={() => setUserType(UserType.NUMBER_0)}
-            color={userType === UserType.NUMBER_0 ? '#16a34a' : '#6b7280'}
-            iconName="gift-outline"
+            color={userType === UserType.NUMBER_0 ? '#2563eb' : '#4b4d50ff'}
+            iconName="gift"
           />
           <PressableButton
             title={`Panter${userType === UserType.NUMBER_1 ? ' ✓' : ''}`}
             onPress={() => setUserType(UserType.NUMBER_1)}
-            color={userType === UserType.NUMBER_1 ? '#16a34a' : '#6b7280'}
-            iconName="recycle-outline"
+            color={userType === UserType.NUMBER_1 ? '#2563eb' : '#4b4d50ff'}
+            iconName="recycle"
           />
         </View>
       </View>
-      <PressableButton title={loading ? 'Opretter...' : 'Opret konto'} onPress={handleRegister} disabled={loading} color="#2563eb" iconName="person-add-outline" />
+      <PressableButton title={loading ? 'Opretter...' : 'Opret konto'} onPress={handleRegister} disabled={loading} color="#16a34a" iconName="user-plus" style={styles.button} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
+  container: { flexGrow: 1, padding: 24, gap: 12, maxWidth: '100%', alignSelf: 'center', justifyContent: 'center', width: 480 },
+  button: {
     justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#fff',
   },
   title: {
     fontSize: 24,

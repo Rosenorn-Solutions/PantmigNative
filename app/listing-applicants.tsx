@@ -176,7 +176,7 @@ export default function ListingApplicantsScreen() {
                   <Text style={{ color: '#666', marginTop: 2 }}>{ratingText}</Text>
                   <Text style={{ color: '#666', marginTop: 2 }}>Ansøgt: {when}</Text>
                 </View>
-                <PressableButton title={isItemBusy ? 'Vælger…' : 'Vælg'} onPress={() => selectApplicant(id)} disabled={isItemBusy} color="#16a34a" iconName="checkmark-done-outline" />
+                <PressableButton title={isItemBusy ? 'Vælger…' : 'Vælg'} onPress={() => selectApplicant(id)} disabled={isItemBusy} color="#16a34a" iconName="user-check" />
               </View>
             );
           }}

@@ -2,6 +2,8 @@ import { Stack } from "expo-router";
 import { Platform, Pressable, Text, View } from "react-native";
 import { AuthProvider } from "./AuthContext";
 import { ToastProvider } from "./Toast";
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import PressableButton from '../components/PressableButton';
 
 
 const MAX_WIDTH = 900;
@@ -9,7 +11,7 @@ const MAX_WIDTH = 900;
 function WebHeader({ navigation, options, back }: any) {
   const title = options?.title ?? '';
   return (
-    <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee' }}>
+    <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee', justifyContent: 'center' }}>
       <View
         style={{
           width: '100%',
@@ -26,11 +28,11 @@ function WebHeader({ navigation, options, back }: any) {
         <View style={{ width: 64, justifyContent: 'center' }}>
           {back ? (
             <Pressable onPress={() => navigation.goBack()} style={{ paddingVertical: 8, paddingHorizontal: 8 }}>
-              <Text style={{ fontSize: 18 }}>←</Text>
+              <FontAwesome6 name="arrow-left" size={18} color="black" style={{ marginRight: 6 }} />
             </Pressable>
           ) : null}
         </View>
-        <View style={{ flex: 1, alignItems: 'center' }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', }}>
           <Text style={{ fontSize: 18, fontWeight: '600' }} numberOfLines={1}>
             {title}
           </Text>

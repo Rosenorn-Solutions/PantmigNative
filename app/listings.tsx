@@ -119,7 +119,7 @@ export default function ListingsScreen() {
       keyExtractor={(item) => String(item.id)}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       renderItem={({ item }) => (
-        <View style={{ padding: 12, borderWidth: 1, borderColor: '#ddd', marginBottom: 12, borderRadius: 8 }}>
+        <View style={{ padding: 12, borderWidth: 1, borderColor: '#ddd', marginBottom: 12, borderRadius: 8, justifyContent: 'center' }}>
           <Text style={{ fontWeight: '600', marginBottom: 4 }}>{item.title}</Text>
           {item.description ? <Text>{item.description}</Text> : null}
           {item.location ? <Text style={{ color: '#666' }}>{item.location}</Text> : null}
