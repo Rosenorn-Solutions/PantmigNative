@@ -1,13 +1,13 @@
 {
   "expo": {
-    "name": "Pantmig-Native",
-    "slug": "Pantmig-Native",
+    "name": "PantmigNative",
+    "slug": "pantmig-native",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "pantmignative",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true
     },
@@ -17,24 +17,14 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.PantmigNative"
+      "package": "com.rosenornsolutions.PantmigNative"
     },
     "web": {
       "bundler": "metro",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
-        }
-      ],
-      "expo-maps"
+      "expo-router"
     ],
     "experiments": {
       "typedRoutes": true

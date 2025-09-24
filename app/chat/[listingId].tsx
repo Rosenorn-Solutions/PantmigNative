@@ -257,7 +257,7 @@ export default function ListingChatScreen() {
                   const c = connectionRef.current; if (c) { c.stop(); }
                   connectionRef.current = null;
                   setConnecting(true); // effect will reconnect
-                }} color="#2563eb" iconName="refresh-outline" />
+                }} color="#2563eb" iconName="rotate-right" />
               </View>
             );
           }

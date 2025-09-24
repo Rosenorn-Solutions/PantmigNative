@@ -86,7 +86,7 @@ export default function ReceiptUploadScreen() {
     <View style={{ flex: 1, padding: 16 }}>
       <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>Upload kvittering</Text>
       <View style={{ marginBottom: 12 }}>
-  <PressableButton title={imageUri ? 'Vælg andet billede' : 'Vælg billede'} onPress={pickImage} color="#6b7280" iconName="image-outline" />
+  <PressableButton title={imageUri ? 'Vælg andet billede' : 'Vælg billede'} onPress={pickImage} color="#6b7280" iconName="image" />
         {imageUri ? (
           <Image source={{ uri: imageUri }} style={{ width: '100%', height: 240, marginTop: 12, borderRadius: 8 }} resizeMode="contain" />
         ) : null}
@@ -102,8 +102,8 @@ export default function ReceiptUploadScreen() {
         />
       </View>
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        <PressableButton title="Annuller" color="#6b7280" onPress={() => router.back()} iconName="close-outline" />
-        <PressableButton title={submitting ? 'Uploader...' : 'Upload'} onPress={onSubmit} disabled={submitting} color="#10b981" iconName="cloud-upload-outline" />
+  <PressableButton title="Annuller" color="#6b7280" onPress={() => router.back()} iconName="xmark" />
+  <PressableButton title={submitting ? 'Uploader...' : 'Upload'} onPress={onSubmit} disabled={submitting} color="#10b981" iconName="cloud-arrow-up" />
       </View>
       {submitting ? (
         <View style={{ marginTop: 12 }}>

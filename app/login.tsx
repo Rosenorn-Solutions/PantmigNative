@@ -54,7 +54,7 @@ export default function LoginScreen() {
         onChangeText={setPassword}
         secureTextEntry
       />
-  <PressableButton title={loading ? 'Logger ind...' : 'Log ind'} onPress={handleLogin} disabled={loading} color="#2563eb" iconName="arrow-right-to-bracket" style={styles.button} />
+  <PressableButton title={loading ? 'Logger ind...' : 'Log ind'} onPress={handleLogin} disabled={loading} color="#2563eb" iconName="right-to-bracket" style={styles.button} />
   <View style={{ height: 34 }} />
   <Text style={{ color: '#666', fontSize: 12, textAlign: 'center' }}>Har du ikke en konto?</Text>
   <PressableButton title="Opret konto" onPress={() => router.push('/register')} color="#6b7280" iconName="user-plus" style={styles.button} />

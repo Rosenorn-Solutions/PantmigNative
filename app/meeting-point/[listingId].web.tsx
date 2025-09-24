@@ -56,15 +56,16 @@ function SearchBar(props: SearchBarProps) {
         onPress={onSearch}
         disabled={!canEdit || searching || !query.trim()}
         color="#6b7280"
-        iconName="search-outline"
+        iconName="magnifying-glass-location"
       />
     </View>
   );
 }
 
 function Footer({ pin, canEdit, onSave, saving }: { readonly pin: MeetingPin | null; readonly canEdit: boolean; readonly onSave: () => void; readonly saving: boolean }) {
+  const r = useRouter();
   return (
-    <View style={{ padding: 12, borderTopWidth: 1, borderColor: '#eee', backgroundColor: 'white' }}>
+    <View style={{ padding: 12, borderTopWidth: 1, borderColor: '#eee', backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }}>
       <Text style={{ marginBottom: 8 }}>Tryk på kortet for at vælge et mødested.</Text>
       {pin ? (
         <Text style={{ marginBottom: 8, fontSize: 12, color: '#555' }}>
@@ -77,9 +78,16 @@ function Footer({ pin, canEdit, onSave, saving }: { readonly pin: MeetingPin | n
           onPress={onSave}
           disabled={!pin || saving}
           color="#10b981"
-          iconName="save-outline"
+          iconName="save"
+          style={{ maxWidth: 200, marginBottom: 8 }}
         />
       ) : null}
+      <PressableButton
+        title="Fortryd"
+        onPress={() => r.back()}
+        color="#dc2626"
+        iconName="arrow-left"
+      />
     </View>
   );
 }

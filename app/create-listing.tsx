@@ -371,7 +371,7 @@ export default function CreateListingScreen() {
                     <Text style={[styles.webPickerLabel, { marginTop: 8 }]}>Tid (TT:MM)</Text>
                     <TextInput style={styles.input} value={fromTimeStr} placeholder="14:30" onChangeText={setFromTimeStr} />
                     <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, justifyContent: 'flex-end' }}>
-                      <PressableButton title="Annuller" onPress={() => setWebFromOpen(false)} color="#6b7280" iconName="close-outline" />
+                      <PressableButton title="Annuller" onPress={() => setWebFromOpen(false)} color="#6b7280" iconName="xmark" />
                       <PressableButton title="Vælg" onPress={() => {
                         const d = parseLocal(fromDateStr, fromTimeStr);
                         if (!d) { setErrors({ ...errors, availableFrom: 'Ugyldigt dato/tid-format' }); return; }
@@ -379,7 +379,7 @@ export default function CreateListingScreen() {
                         setErrors({ ...errors, availableFrom: '' });
                         shiftEndIfNeeded(d);
                         setWebFromOpen(false);
-                      }} color="#16a34a" iconName="checkmark-outline" />
+                      }} color="#16a34a" iconName="check" />
                     </View>
                   </View>
                 </View>
@@ -393,7 +393,7 @@ export default function CreateListingScreen() {
                     <Text style={[styles.webPickerLabel, { marginTop: 8 }]}>Tid (TT:MM)</Text>
                     <TextInput style={styles.input} value={toTimeStr} placeholder="15:45" onChangeText={setToTimeStr} />
                     <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, justifyContent: 'flex-end' }}>
-                      <PressableButton title="Annuller" onPress={() => setWebToOpen(false)} color="#6b7280" iconName="close-outline" />
+                      <PressableButton title="Annuller" onPress={() => setWebToOpen(false)} color="#6b7280" iconName="xmark" />
                       <PressableButton title="Vælg" onPress={() => {
                         const d = parseLocal(toDateStr, toTimeStr);
                         if (!d) { setErrors({ ...errors, availableTo: 'Ugyldigt dato/tid-format' }); return; }
@@ -401,7 +401,7 @@ export default function CreateListingScreen() {
                         updateField('availableTo', d);
                         setErrors({ ...errors, availableTo: '' });
                         setWebToOpen(false);
-                      }} color="#16a34a" iconName="checkmark-outline" />
+                      }} color="#16a34a" iconName="check" />
                     </View>
                   </View>
                 </View>

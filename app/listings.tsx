@@ -131,7 +131,7 @@ export default function ListingsScreen() {
                 onPress={() => apply(item)}
                 disabled={isApplyDisabled(item)}
                 color="#16a34a"
-                iconName="send-outline"
+                iconName="paper-plane"
               />
             </View>
           )}

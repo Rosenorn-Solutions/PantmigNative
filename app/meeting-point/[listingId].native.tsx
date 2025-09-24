@@ -2,11 +2,10 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, Text, TextInput, View } from 'react-native';
 import PressableButton from '../../components/PressableButton';
-import { MapView, Marker, Camera, Region } from 'expo-maps';
+import MapView, { Marker, PROVIDER_GOOGLE, Region, Camera } from 'react-native-maps';
 import { useAuth } from '../AuthContext';
 import { useToast } from '../Toast';
 import { createRecycleListingsApi } from '../services/api';
-import { TouchableOpacity } from 'react-native';
 
 type MeetingPin = { latitude: number; longitude: number };
 
@@ -33,8 +32,8 @@ function SearchBar(props: SearchBarProps) {
         title={searching ? 'Søger…' : 'Søg'}
         onPress={onSearch}
         disabled={!canEdit || searching || !query.trim()}
-        color="#6b7280"
-        iconName="search-outline"
+  color="#6b7280"
+  iconName="magnifying-glass-location"
       />
     </View>
   );
@@ -55,7 +54,7 @@ function Footer({ pin, canEdit, onSave, saving }: { readonly pin: MeetingPin | n
           onPress={onSave}
           disabled={!pin || saving}
           color="#10b981"
-          iconName="save-outline"
+          iconName="save"
         />
       ) : null}
     </View>
@@ -98,8 +97,8 @@ export default function MeetingPointScreen() {
   const [saving, setSaving] = useState(false);
   const [pin, setPin] = useState<MeetingPin | null>(null);
   const [suggestions, setSuggestions] = useState<Array<{ display: string; lat: number; lon: number }>>([]);
-  const region = pin ? { ...pin, latitudeDelta: 0.01, longitudeDelta: 0.01 } : { latitude: 55.6761, longitude: 12.5683, latitudeDelta: 0.05, longitudeDelta: 0.05 };
-  const cameraRef = useRef<Camera | null>(null);
+  const [region, setRegion] = useState<Region>({ latitude: 55.6761, longitude: 12.5683, latitudeDelta: 0.05, longitudeDelta: 0.05 });
+  const mapRef = useRef<MapView | null>(null);
 
   const load = useCallback(async () => {
     if (!token || !idNum) return;
@@ -120,13 +119,14 @@ export default function MeetingPointScreen() {
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
-    if (pin && cameraRef.current) {
-      cameraRef.current.animateToRegion?.({
-        latitude: pin.latitude,
-        longitude: pin.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      } as Region, 500);
+    if (pin) {
+      const next = { latitude: pin.latitude, longitude: pin.longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 };
+      setRegion(next);
+      // Animate camera for smoother UX if ref available
+      if (mapRef.current) {
+        const cam: Partial<Camera> = { center: { latitude: pin.latitude, longitude: pin.longitude }, zoom: 15 } as any;
+        try { (mapRef.current as any).animateCamera(cam, { duration: 650 }); } catch {}
+      }
     }
   }, [pin?.latitude, pin?.longitude]);
 
@@ -143,8 +143,8 @@ export default function MeetingPointScreen() {
       if (Array.isArray(arr) && arr[0]) {
         const lat = parseFloat(arr[0].lat);
         const lon = parseFloat(arr[0].lon);
-        if (isFinite(lat) && isFinite(lon) && nativeAnimateRef.current) {
-          nativeAnimateRef.current(lat, lon);
+        if (isFinite(lat) && isFinite(lon)) {
+          setPin({ latitude: lat, longitude: lon });
         }
       } else {
         show('Ingen resultater', 'error');
@@ -219,26 +219,28 @@ export default function MeetingPointScreen() {
             }}
           />
           <MapView
+            ref={mapRef}
             style={{ flex: 1 }}
-            initialRegion={region as any}
-            onPress={(e: any) => {
+            provider={PROVIDER_GOOGLE}
+            initialRegion={region}
+            region={region}
+            onPress={(e) => {
               if (!canEdit) return;
-              const { coordinate } = e?.nativeEvent || {};
+              const { coordinate } = e.nativeEvent;
               if (coordinate) setPin({ latitude: coordinate.latitude, longitude: coordinate.longitude });
             }}
-            ref={(ref: any) => {
-              // expo-maps uses Camera; store if available
-              if (ref?.getCamera) {
-                cameraRef.current = ref as unknown as Camera;
-              }
-            }}
+            onRegionChangeComplete={(r) => setRegion(r)}
           >
-            {pin ? (
-              <Marker coordinate={{ latitude: pin.latitude, longitude: pin.longitude }} draggable={canEdit} onDragEnd={(e: any) => {
-                const { coordinate } = e?.nativeEvent || {};
-                if (coordinate) setPin({ latitude: coordinate.latitude, longitude: coordinate.longitude });
-              }} />
-            ) : null}
+            {pin && (
+              <Marker
+                coordinate={{ latitude: pin.latitude, longitude: pin.longitude }}
+                draggable={canEdit}
+                onDragEnd={(e) => {
+                  const { coordinate } = e.nativeEvent;
+                  if (coordinate) setPin({ latitude: coordinate.latitude, longitude: coordinate.longitude });
+                }}
+              />
+            )}
           </MapView>
           <Footer pin={pin} canEdit={canEdit} onSave={save} saving={saving} />
         </View>
