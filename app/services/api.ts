@@ -5,12 +5,12 @@ import { AuthApi } from '../apis/pantmig-auth/apis/AuthApi';
 import { AuthResponse } from '../apis/pantmig-auth/models/AuthResponse';
 import { TokenRefreshRequest } from '../apis/pantmig-auth/models/TokenRefreshRequest';
 import { Configuration as AuthConfig, ErrorContext, Middleware, RequestContext } from '../apis/pantmig-auth/runtime';
-import { API_BASE, AUTH_BASE } from '../config';
+import { API_BASE, AUTH_BASE, PROD_API_BASE, PROD_AUTH_BASE } from '../config';
 
 // Two separate, configurable base URLs
-// Priority: local config.ts -> EXPO_PUBLIC_* env -> sane defaults
-const apiBasePath = API_BASE || process.env.EXPO_PUBLIC_API_BASE || 'http://localhost:5001';
-const authBasePath = AUTH_BASE || process.env.EXPO_PUBLIC_AUTH_BASE || 'http://localhost:5002';
+// Priority: explicit config vars -> process env explicit base -> production domains -> legacy localhost defaults
+const apiBasePath = API_BASE || process.env.EXPO_PUBLIC_API_BASE || PROD_API_BASE || 'http://localhost:5001';
+const authBasePath = AUTH_BASE || process.env.EXPO_PUBLIC_AUTH_BASE || PROD_AUTH_BASE || 'http://localhost:5002';
 
 // Log resolved base paths once for debugging
 // These logs help diagnose emulator/host connectivity issues

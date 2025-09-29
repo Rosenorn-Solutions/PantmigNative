@@ -12,6 +12,23 @@ Mobile app built with Expo Router for the Pantmig platform. Users can register, 
 - Toast notifications for success/errors
 - Expo Router with typed routes and simple, clean UI
 
+## Backend endpoints
+
+Public production endpoints are now live:
+
+- Core API: https://api.pantmig.dk
+- Auth API: https://auth.pantmig.dk
+
+You usually do NOT need to edit config for production usage. For local development you can still override via environment variables or by editing `app/config.ts`.
+
+Override order (highest to lowest):
+1. `EXPO_PUBLIC_API_BASE` / `EXPO_PUBLIC_AUTH_BASE`
+2. Host/port reconstruction using `EXPO_PUBLIC_HOST` (+ optional protocol & ports)
+3. Built-in production domains (default)
+4. Legacy localhost fallbacks inside `services/api.ts`
+
+> Note: Automatic Android emulator substitution to `10.0.2.2` has been removed. To use a local backend now you must explicitly set `EXPO_PUBLIC_HOST` (e.g. `localhost` or your LAN IP) or supply full bases (`EXPO_PUBLIC_API_BASE`). This prevents unintentionally hitting a non-production host on Android when no overrides are intended.
+
 ## Quick start
 
 Prerequisites
@@ -25,11 +42,25 @@ Install dependencies
 npm install
 ```
 
-Configure backend endpoints (optional now, required for real API calls)
+Optional local backend config
 
-- Edit `app/config.ts` and set the base URLs:
-   - `API_BASE` (default: `http://localhost:5001`)
-   - `AUTH_BASE` (default: `http://localhost:5002`)
+If you run services locally instead of using production:
+
+```powershell
+# Example (PowerShell) - start with local core on 5001 & auth on 5002
+$env:EXPO_PUBLIC_HOST = "localhost"
+$env:EXPO_PUBLIC_API_PORT = "5001"
+$env:EXPO_PUBLIC_AUTH_PORT = "5002"
+# (Optionally) protocol override
+$env:EXPO_PUBLIC_PROTOCOL = "http"
+```
+
+Or provide full bases:
+
+```powershell
+$env:EXPO_PUBLIC_API_BASE = "http://localhost:5001"
+$env:EXPO_PUBLIC_AUTH_BASE = "http://localhost:5002"
+```
 
 Start the app
 
@@ -39,10 +70,10 @@ npx expo start
 
 Then choose a platform from the Expo dev tools (Android, iOS, or Web).
 
-## Backend expectations
+## Backend expectations (local dev)
 
-- Core API must run at `API_BASE` (default `:5001`)
-- Auth API must run at `AUTH_BASE` (default `:5002`)
+- Core API must run at your chosen `API_BASE`
+- Auth API must run at your chosen `AUTH_BASE`
 
 On emulators/devices, localhost rules apply:
 
@@ -50,7 +81,7 @@ On emulators/devices, localhost rules apply:
 - iOS simulator: `http://127.0.0.1:PORT`
 - Physical devices: use your machine’s LAN IP and ensure the ports are reachable
 
-Update `app/config.ts` accordingly when testing on different targets.
+Update env vars or `app/config.ts` accordingly when testing on different targets.
 
 ## API clients (OpenAPI)
 
@@ -83,10 +114,37 @@ npm i -D @openapitools/openapi-generator-cli
 
 ## Troubleshooting
 
-- 401 errors after login: confirm both services are running and base URLs are correct in `app/config.ts`.
-- Refresh loop or sudden logout: your refresh token may be invalid/expired. The app proactively refreshes ~1 minute before access expiry and also on resume; on failure it logs you out and shows a toast. Log in again to continue.
-- Android can’t reach localhost: use `10.0.2.2` instead of `localhost` in `app/config.ts`.
-- CORS/network issues: check backend CORS and that device/emulator can reach the host/port.
+- 401 errors after login: confirm both services are reachable (local or production). If local, verify env vars and that swagger endpoints respond.
+- Refresh loop or sudden logout: refresh token may be invalid/expired. Log in again.
+- Android can’t reach localhost: use `10.0.2.2` instead of `localhost`.
+- CORS/network issues: check backend CORS and that device/emulator can reach the host/port (or that production domains are not blocked/firewalled on your network).
+
+### Web bundling error with react-native-maps
+
+If you ever see during a web build:
+
+```
+Error: Importing native-only module "react-native/Libraries/Utilities/codegenNativeCommands" on web from: .../node_modules/react-native-maps/lib/MapMarkerNativeComponent.js
+```
+
+That means the native internals of `react-native-maps` were traversed on web. The app intentionally uses **Leaflet on web** (see the `meeting-point/[listingId].web.tsx` screen) and should never load `react-native-maps` there.
+
+To prevent this, `metro.config.js` contains a resolver override that, on web only, redirects the module name `react-native-maps` to a lightweight stub in `stubs/react-native-maps-web.js`. This keeps Metro from walking into native-only files.
+
+You can safely remove that override (and the stub) only if:
+
+1. You adopt a map library that provides a proper web build, or
+2. You stop using `react-native-maps` entirely.
+
+If you remove it prematurely, the error above will return and block the web bundle.
+
+Quick reference:
+- Resolver location: `metro.config.js` (search for `react-native-maps` comment block)
+- Stub file: `stubs/react-native-maps-web.js`
+- Native screen using the real map: `app/meeting-point/[listingId].native.tsx`
+- Web screen using Leaflet: `app/meeting-point/[listingId].web.tsx`
+
+This approach avoids forking the library and keeps the platform split explicit.
 
 ## License
 

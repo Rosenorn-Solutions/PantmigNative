@@ -1,6 +1,7 @@
 import { Redirect, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { InteractionManager, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { InteractionManager, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Image, Animated, Easing } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import PressableButton from '../components/PressableButton';
 import { CitiesApi } from './apis/pantmig-api/apis';
 import type { CitySearchResult } from './apis/pantmig-api/models/CitySearchResult';
@@ -33,6 +34,71 @@ export default function RegisterScreen() {
   const selectingRef = useRef(false);
   const router = useRouter();
   const { show } = useToast();
+
+  // Animation refs (mirroring login sequence)
+  const fadeLogo = useRef(new Animated.Value(0)).current;
+  const scaleLogo = useRef(new Animated.Value(0.92)).current;
+  const fadeTitle = useRef(new Animated.Value(0)).current;
+  const transTitle = useRef(new Animated.Value(10)).current;
+  const fadeFields = useRef(new Animated.Value(0)).current; // batch early fields
+  const transFields = useRef(new Animated.Value(10)).current;
+  const fadeCityBlock = useRef(new Animated.Value(0)).current;
+  const transCityBlock = useRef(new Animated.Value(10)).current;
+  const fadeRole = useRef(new Animated.Value(0)).current;
+  const transRole = useRef(new Animated.Value(10)).current;
+  const fadeButton = useRef(new Animated.Value(0)).current;
+  const transButton = useRef(new Animated.Value(10)).current;
+  const fadeTagline = useRef(new Animated.Value(0)).current;
+  const transTagline = useRef(new Animated.Value(6)).current;
+
+  const [reduceMotion, setReduceMotion] = useState(false);
+  useEffect(() => { AsyncStorage.getItem('ui:reduceMotion').then(v => { if (v === '1') setReduceMotion(true); }).catch(()=>{}); }, []);
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const seen = await AsyncStorage.getItem('ui:firstAuthAnimSeen');
+        if (seen || reduceMotion) {
+          [fadeLogo, fadeTitle, fadeTagline, fadeFields, fadeCityBlock, fadeRole, fadeButton].forEach(v => v.setValue(1));
+          [transTitle, transTagline, transFields, transCityBlock, transRole, transButton].forEach(v => v.setValue(0));
+          scaleLogo.setValue(1);
+          return;
+        }
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(fadeLogo, { toValue: 1, duration: 600, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+            Animated.spring(scaleLogo, { toValue: 1, friction: 6, tension: 90, useNativeDriver: true, delay: 60 })
+          ]),
+          Animated.stagger(90, [
+            Animated.parallel([
+              Animated.timing(fadeTitle, { toValue: 1, duration: 280, useNativeDriver: true }),
+              Animated.timing(transTitle, { toValue: 0, duration: 280, useNativeDriver: true })
+            ]),
+            Animated.parallel([
+              Animated.timing(fadeTagline, { toValue: 1, duration: 300, useNativeDriver: true }),
+              Animated.timing(transTagline, { toValue: 0, duration: 300, useNativeDriver: true })
+            ]),
+            Animated.parallel([
+              Animated.timing(fadeFields, { toValue: 1, duration: 320, useNativeDriver: true }),
+              Animated.timing(transFields, { toValue: 0, duration: 320, useNativeDriver: true })
+            ]),
+            Animated.parallel([
+              Animated.timing(fadeCityBlock, { toValue: 1, duration: 320, useNativeDriver: true }),
+              Animated.timing(transCityBlock, { toValue: 0, duration: 320, useNativeDriver: true })
+            ]),
+            Animated.parallel([
+              Animated.timing(fadeRole, { toValue: 1, duration: 320, useNativeDriver: true }),
+              Animated.timing(transRole, { toValue: 0, duration: 320, useNativeDriver: true })
+            ]),
+            Animated.parallel([
+              Animated.timing(fadeButton, { toValue: 1, duration: 320, useNativeDriver: true }),
+              Animated.timing(transButton, { toValue: 0, duration: 320, useNativeDriver: true })
+            ])
+          ])
+        ]).start(() => { AsyncStorage.setItem('ui:firstAuthAnimSeen', '1').catch(()=>{}); });
+      } catch {/* ignore */}
+    };
+    run();
+  }, [reduceMotion, fadeLogo, scaleLogo, fadeTitle, transTitle, fadeFields, transFields, fadeCityBlock, transCityBlock, fadeRole, transRole, fadeButton, transButton, fadeTagline, transTagline]);
 
   const validate = () => {
     const next: Record<string, string> = {};
@@ -75,17 +141,10 @@ export default function RegisterScreen() {
 
   // Debounced typeahead search for cities
   useEffect(() => {
-    if (suppressNextSearchRef.current) {
-      suppressNextSearchRef.current = false;
-      return;
-    }
+    if (suppressNextSearchRef.current) { suppressNextSearchRef.current = false; return; }
     const q = cityQuery.trim();
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!q) {
-      setCityResults([]);
-      setCityOpen(false);
-      return;
-    }
+    if (!q) { setCityResults([]); setCityOpen(false); return; }
     debounceRef.current = setTimeout(async () => {
       try {
         setCityLoading(true);
@@ -93,160 +152,82 @@ export default function RegisterScreen() {
         setCityResults(results || []);
         if (Platform.OS === 'android' && !deferredFirstOpenRef.current) {
           deferredFirstOpenRef.current = true;
-          InteractionManager.runAfterInteractions(() => {
-            requestAnimationFrame(() => setCityOpen(true));
-          });
-        } else {
-          setCityOpen(true);
-        }
+          InteractionManager.runAfterInteractions(() => { requestAnimationFrame(() => setCityOpen(true)); });
+        } else { setCityOpen(true); }
       } catch (e) {
-        // Log and close dropdown on error to satisfy lint rules
         console.debug('City search failed', e);
-        setCityResults([]);
-        setCityOpen(false);
-      } finally {
-        setCityLoading(false);
-      }
+        setCityResults([]); setCityOpen(false);
+      } finally { setCityLoading(false); }
     }, 250);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [cityQuery, citiesApi]);
 
-  if (token) {
-    return <Redirect href="/" />;
-  }
+  const toggleReduceMotion = async () => {
+    const next = !reduceMotion;
+    setReduceMotion(next);
+    try {
+      if (next) {
+        await AsyncStorage.setItem('ui:reduceMotion', '1');
+        [fadeLogo, fadeTitle, fadeTagline, fadeFields, fadeCityBlock, fadeRole, fadeButton].forEach(v => v.setValue(1));
+        [transTitle, transTagline, transFields, transCityBlock, transRole, transButton].forEach(v => v.setValue(0));
+        scaleLogo.setValue(1);
+      } else {
+        await AsyncStorage.removeItem('ui:reduceMotion');
+      }
+    } catch {}
+  };
+
+  if (token) return <Redirect href="/" />;
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>Opret konto</Text>
-      <TextInput
-        style={[styles.input, errors.email && styles.inputError]}
-        placeholder="Email"
-        value={email}
-        onChangeText={(v) => { setEmail(v); if (errors.email) setErrors({ ...errors, email: '' }); }}
-        autoCapitalize="none"
-        autoComplete="off"
-        textContentType="none"
-        keyboardType="email-address"
-      />
-      {!!errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-      <TextInput
-        style={[styles.input, errors.password && styles.inputError]}
-        placeholder="Adgangskode"
-        value={password}
-        onChangeText={(v) => { setPassword(v); if (errors.password) setErrors({ ...errors, password: '' }); }}
-        secureTextEntry
-      />
-      {!!errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
-      <TextInput
-        style={[styles.input, errors.firstName && styles.inputError]}
-        placeholder="Fornavn"
-        value={firstName}
-        onChangeText={(v) => { setFirstName(v); if (errors.firstName) setErrors({ ...errors, firstName: '' }); }}
-      />
-      {!!errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
-      <TextInput
-        style={[styles.input, errors.lastName && styles.inputError]}
-        placeholder="Efternavn"
-        value={lastName}
-        onChangeText={(v) => { setLastName(v); if (errors.lastName) setErrors({ ...errors, lastName: '' }); }}
-      />
-      {!!errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
-      <TextInput
-        style={styles.input}
-        placeholder="Telefonnummer"
-        value={phone}
-        onChangeText={setPhone}
-        keyboardType="phone-pad"
-      />
-      <View style={[styles.typeaheadContainer, cityOpen && styles.typeaheadOpen]}>
-        <TextInput
-          style={[styles.input, errors.city && styles.inputError]}
-          placeholder="By (fx. København)"
-          value={cityQuery}
-          onChangeText={(t) => {
-            setCityQuery(t);
-            const shouldOpen = !!t && (Platform.OS !== 'android' || deferredFirstOpenRef.current);
-            setCityOpen(shouldOpen);
-            if (errors.city) setErrors({ ...errors, city: '' });
-          }}
-          autoCapitalize="words"
-          onBlur={() => {
-            // Defer close so suggestion press can apply value first
-            setTimeout(() => {
-              if (!selectingRef.current) {
-                setCityOpen(false);
-                setCityResults([]);
-              }
-            }, 100);
-          }}
-          onFocus={() => {
-            if (cityResults.length > 0) setCityOpen(true);
-          }}
-        />
+      <Animated.View style={[styles.logoWrapper, { opacity: fadeLogo, transform: [{ scale: scaleLogo }] }]}>        
+        <Image source={require('../assets/images/icon.png')} style={styles.logo} resizeMode="contain" accessibilityRole="image" accessibilityLabel="Pantmig logo" />
+      </Animated.View>
+      <Animated.Text style={[styles.title, { opacity: fadeTitle, transform: [{ translateY: transTitle }] }]}>Opret konto</Animated.Text>
+      <Animated.Text style={[styles.tagline, { opacity: fadeTagline, transform: [{ translateY: transTagline }] }]}>Bliv en del af genbrugskredsløbet</Animated.Text>
+      <Animated.View style={{ opacity: fadeFields, transform: [{ translateY: transFields }] }}>
+        <TextInput style={[styles.input, errors.email && styles.inputError]} placeholder="Email" value={email} onChangeText={(v)=>{ setEmail(v); if (errors.email) setErrors({ ...errors, email: '' }); }} autoCapitalize="none" autoComplete="off" textContentType="none" keyboardType="email-address" />
+        {!!errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+        <TextInput style={[styles.input, errors.password && styles.inputError]} placeholder="Adgangskode" value={password} onChangeText={(v)=>{ setPassword(v); if (errors.password) setErrors({ ...errors, password: '' }); }} secureTextEntry />
+        {!!errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+        <TextInput style={[styles.input, errors.firstName && styles.inputError]} placeholder="Fornavn" value={firstName} onChangeText={(v)=>{ setFirstName(v); if (errors.firstName) setErrors({ ...errors, firstName: '' }); }} />
+        {!!errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
+        <TextInput style={[styles.input, errors.lastName && styles.inputError]} placeholder="Efternavn" value={lastName} onChangeText={(v)=>{ setLastName(v); if (errors.lastName) setErrors({ ...errors, lastName: '' }); }} />
+        {!!errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
+        <TextInput style={styles.input} placeholder="Telefonnummer" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+      </Animated.View>
+      <Animated.View style={[styles.typeaheadContainer, cityOpen && styles.typeaheadOpen, { opacity: fadeCityBlock, transform: [{ translateY: transCityBlock }] }]}>        
+        <TextInput style={[styles.input, errors.city && styles.inputError]} placeholder="By (fx. København)" value={cityQuery} onChangeText={(t)=>{ setCityQuery(t); const shouldOpen = !!t && (Platform.OS !== 'android' || deferredFirstOpenRef.current); setCityOpen(shouldOpen); if (errors.city) setErrors({ ...errors, city: '' }); }} autoCapitalize="words" onBlur={()=>{ setTimeout(()=>{ if(!selectingRef.current){ setCityOpen(false); setCityResults([]);} },100); }} onFocus={()=>{ if(cityResults.length>0) setCityOpen(true); }} />
         {!!errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
-        {cityOpen && cityResults.length > 0 && (
+        {cityOpen && cityResults.length>0 && (
           <View style={styles.dropdown}>
-            {cityLoading && (
-              <Text style={styles.dropdownHint}>Søger...</Text>
-            )}
+            {cityLoading && <Text style={styles.dropdownHint}>Søger...</Text>}
             {!cityLoading && (
               <ScrollView style={{ maxHeight: 240 }} keyboardShouldPersistTaps="handled">
-                {cityResults.map((c) => {
-                  const pcs = c.postalCodes?.slice(0, 3).join(', ');
-                  const hasMore = (c.postalCodes?.length ?? 0) > 3;
-                  let suffix = '';
-                  if (pcs && pcs.length > 0) {
-                    suffix = ` (${pcs}${hasMore ? '…' : ''})`;
-                  }
-                  return (
-                    <Pressable
-                      key={c.id}
-                      onPressIn={() => { selectingRef.current = true; }}
-                      onPress={() => {
-                        suppressNextSearchRef.current = true;
-                        setCity(c.name || '');
-                        setCityQuery(c.name || '');
-                        setCityOpen(false);
-                        setCityResults([]);
-                        setTimeout(() => { selectingRef.current = false; }, 0);
-                      }}
-                      style={({ pressed }) => [
-                        styles.dropdownItem,
-                        pressed && styles.dropdownItemPressed,
-                      ]}
-                    >
-                      <Text style={styles.dropdownText}>
-                        {c.name}
-                        {suffix}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
+                {cityResults.map(c=>{ const pcs=c.postalCodes?.slice(0,3).join(', '); const hasMore=(c.postalCodes?.length??0)>3; let suffix=''; if(pcs&&pcs.length>0) suffix=` (${pcs}${hasMore?'…':''})`; return (
+                  <Pressable key={c.id} onPressIn={()=>{ selectingRef.current=true; }} onPress={()=>{ suppressNextSearchRef.current=true; setCity(c.name||''); setCityQuery(c.name||''); setCityOpen(false); setCityResults([]); setTimeout(()=>{ selectingRef.current=false; },0); }} style={({pressed})=>[styles.dropdownItem, pressed && styles.dropdownItemPressed]}>
+                    <Text style={styles.dropdownText}>{c.name}{suffix}</Text>
+                  </Pressable>
+                ); })}
               </ScrollView>
             )}
           </View>
         )}
-      </View>
-      <View style={styles.segmented}>
+      </Animated.View>
+      <Animated.View style={[styles.segmented, { opacity: fadeRole, transform: [{ translateY: transRole }] }]}>        
         <Text style={styles.segmentedLabel}>Vælg rolle</Text>
         <View style={styles.segmentedRow}>
-          <PressableButton
-            title={`Donor${userType === UserType.NUMBER_0 ? ' ✓' : ''}`}
-            onPress={() => setUserType(UserType.NUMBER_0)}
-            color={userType === UserType.NUMBER_0 ? '#2563eb' : '#4b4d50ff'}
-            iconName="gift"
-          />
-          <PressableButton
-            title={`Panter${userType === UserType.NUMBER_1 ? ' ✓' : ''}`}
-            onPress={() => setUserType(UserType.NUMBER_1)}
-            color={userType === UserType.NUMBER_1 ? '#2563eb' : '#4b4d50ff'}
-            iconName="recycle"
-          />
+          <PressableButton title={`Donor${userType === UserType.NUMBER_0 ? ' ✓' : ''}`} onPress={()=>setUserType(UserType.NUMBER_0)} color={userType === UserType.NUMBER_0 ? '#2563eb' : '#4b4d50ff'} iconName="gift" />
+          <PressableButton title={`Panter${userType === UserType.NUMBER_1 ? ' ✓' : ''}`} onPress={()=>setUserType(UserType.NUMBER_1)} color={userType === UserType.NUMBER_1 ? '#2563eb' : '#4b4d50ff'} iconName="recycle" />
         </View>
-      </View>
-      <PressableButton title={loading ? 'Opretter...' : 'Opret konto'} onPress={handleRegister} disabled={loading} color="#16a34a" iconName="user-plus" style={styles.button} />
+      </Animated.View>
+      <Animated.View style={{ opacity: fadeButton, transform: [{ translateY: transButton }] }}>
+        <PressableButton title={loading ? 'Opretter...' : 'Opret konto'} onPress={handleRegister} disabled={loading} color="#16a34a" iconName="user-plus" style={styles.button} />
+        <Pressable onPress={async()=>{ const next=!reduceMotion; setReduceMotion(next); try { if(next) { await AsyncStorage.setItem('ui:reduceMotion','1'); [fadeLogo, fadeTitle, fadeTagline, fadeFields, fadeCityBlock, fadeRole, fadeButton].forEach(v=>v.setValue(1)); [transTitle, transTagline, transFields, transCityBlock, transRole, transButton].forEach(v=>v.setValue(0)); scaleLogo.setValue(1);} else { await AsyncStorage.removeItem('ui:reduceMotion'); } } catch {} }} style={{ marginTop:16, alignSelf:'center'}}>
+          <Text style={{ fontSize:12, color:'#64748b' }}>{reduceMotion ? 'Aktiver animationer' : 'Reducer animationer'}</Text>
+        </Pressable>
+      </Animated.View>
     </ScrollView>
   );
 }
@@ -332,4 +313,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
   },
+  logoWrapper: { alignItems: 'center', marginBottom: 4 },
+  logo: { width: 110, height: 110 },
+  tagline: { textAlign: 'center', color: '#475569', marginTop: -12, marginBottom: 16, fontSize: 13, fontWeight: '500' }
 });

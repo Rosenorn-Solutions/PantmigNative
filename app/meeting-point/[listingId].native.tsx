@@ -32,8 +32,8 @@ function SearchBar(props: SearchBarProps) {
         title={searching ? 'Søger…' : 'Søg'}
         onPress={onSearch}
         disabled={!canEdit || searching || !query.trim()}
-  color="#6b7280"
-  iconName="magnifying-glass-location"
+        color="#6b7280"
+        iconName="magnifying-glass-location"
       />
     </View>
   );
@@ -122,7 +122,6 @@ export default function MeetingPointScreen() {
     if (pin) {
       const next = { latitude: pin.latitude, longitude: pin.longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 };
       setRegion(next);
-      // Animate camera for smoother UX if ref available
       if (mapRef.current) {
         const cam: Partial<Camera> = { center: { latitude: pin.latitude, longitude: pin.longitude }, zoom: 15 } as any;
         try { (mapRef.current as any).animateCamera(cam, { duration: 650 }); } catch {}
