@@ -1,7 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { Redirect } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, Text, View } from 'react-native';
+import { StyleSheet, ActivityIndicator, FlatList, RefreshControl, Text, View } from 'react-native';
 import PressableButton from '../components/PressableButton';
 import type { RecycleListing } from './apis/pantmig-api/models/RecycleListing';
 import { useAuth } from './AuthContext';
@@ -125,13 +125,14 @@ export default function ListingsScreen() {
           {item.location ? <Text style={{ color: '#666' }}>{item.location}</Text> : null}
           <Text style={{ marginTop: 4, color: getStatus(item).color }}>Status: {getStatus(item).label}</Text>
           {user?.role === 'Recycler' && (
-            <View style={{ marginTop: 8 }}>
+            <View style={{ marginTop: 8, alignItems: 'center' }}>
               <PressableButton
                 title={getApplyLabel(item)}
                 onPress={() => apply(item)}
                 disabled={isApplyDisabled(item)}
                 color="#16a34a"
                 iconName="paper-plane"
+                style={styles.button}
               />
             </View>
           )}
@@ -140,3 +141,12 @@ export default function ListingsScreen() {
     />
   );
 }
+
+const styles = StyleSheet.create({
+ 
+  button: {
+    justifyContent: 'center',
+    maxWidth: 400,
+    width: '100%',
+  }
+ });
