@@ -16,6 +16,7 @@
 import * as runtime from '../runtime';
 import type {
   AuthResponse,
+  AvailabilityResult,
   LoginRequest,
   LoginResult,
   RegisterRequest,
@@ -29,6 +30,8 @@ import type {
 import {
     AuthResponseFromJSON,
     AuthResponseToJSON,
+    AvailabilityResultFromJSON,
+    AvailabilityResultToJSON,
     LoginRequestFromJSON,
     LoginRequestToJSON,
     LoginResultFromJSON,
@@ -48,6 +51,14 @@ import {
     UsersLookupResultFromJSON,
     UsersLookupResultToJSON,
 } from '../models/index';
+
+export interface AuthCheckEmailRequest {
+    email: string;
+}
+
+export interface AuthCheckPhoneRequest {
+    phone: string;
+}
 
 export interface AuthGetUserByIdRequest {
     id: string;
@@ -73,6 +84,98 @@ export interface AuthUsersLookupRequest {
  * 
  */
 export class AuthApi extends runtime.BaseAPI {
+
+    /**
+     * Returns whether a user with the provided email already exists.
+     * Check if email is already taken
+     */
+    async authCheckEmailRaw(requestParameters: AuthCheckEmailRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AvailabilityResult>> {
+        if (requestParameters['email'] == null) {
+            throw new runtime.RequiredError(
+                'email',
+                'Required parameter "email" was null or undefined when calling authCheckEmail().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['email'] != null) {
+            queryParameters['email'] = requestParameters['email'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["Authorization"] = await this.configuration.apiKey("Authorization"); // Bearer authentication
+        }
+
+
+        let urlPath = `/auth/check-email`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AvailabilityResultFromJSON(jsonValue));
+    }
+
+    /**
+     * Returns whether a user with the provided email already exists.
+     * Check if email is already taken
+     */
+    async authCheckEmail(requestParameters: AuthCheckEmailRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AvailabilityResult> {
+        const response = await this.authCheckEmailRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Returns whether a user with the provided phone number already exists.
+     * Check if phone number is already taken
+     */
+    async authCheckPhoneRaw(requestParameters: AuthCheckPhoneRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AvailabilityResult>> {
+        if (requestParameters['phone'] == null) {
+            throw new runtime.RequiredError(
+                'phone',
+                'Required parameter "phone" was null or undefined when calling authCheckPhone().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['phone'] != null) {
+            queryParameters['phone'] = requestParameters['phone'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["Authorization"] = await this.configuration.apiKey("Authorization"); // Bearer authentication
+        }
+
+
+        let urlPath = `/auth/check-phone`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AvailabilityResultFromJSON(jsonValue));
+    }
+
+    /**
+     * Returns whether a user with the provided phone number already exists.
+     * Check if phone number is already taken
+     */
+    async authCheckPhone(requestParameters: AuthCheckPhoneRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AvailabilityResult> {
+        const response = await this.authCheckPhoneRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * Returns public profile information for a user, including rating.

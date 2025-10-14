@@ -1,6 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 export * from './AuthResponse';
+export * from './AvailabilityResult';
+export * from './Gender';
 export * from './LoginRequest';
 export * from './LoginResult';
 export * from './RegisterRequest';

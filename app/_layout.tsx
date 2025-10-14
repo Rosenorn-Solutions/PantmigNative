@@ -1,9 +1,8 @@
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { Stack } from "expo-router";
 import { Platform, Pressable, Text, View } from "react-native";
 import { AuthProvider } from "./AuthContext";
 import { ToastProvider } from "./Toast";
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import PressableButton from '../components/PressableButton';
 
 
 const MAX_WIDTH = 900;
@@ -57,8 +56,8 @@ export default function RootLayout() {
         <View
           style={webWrapperEnabled ? {
             flex: 1,
-            // Darker neutral background so white card pops more
-            backgroundColor: '#e2e8f0', // slate-200 / tailwind-ish
+            // Align web with native: no colored page background
+            backgroundColor: 'transparent',
             paddingHorizontal: 32,
             paddingVertical: 40,
             boxSizing: 'border-box' as any,
@@ -70,22 +69,14 @@ export default function RootLayout() {
               maxWidth: MAX_WIDTH,
               alignSelf: 'center',
               width: '100%',
-              backgroundColor: '#ffffff',
-              borderRadius: 18,
-              // Enhanced shadow for clearer separation
-              shadowColor: '#0f172a',
-              shadowOpacity: 0.09,
-              shadowRadius: 30,
-              shadowOffset: { width: 0, height: 6 },
-              borderWidth: 1,
-              borderColor: '#d1d5db', // slightly darker border
-              overflow: 'hidden',
+              // Remove card visuals; keep layout constraints only
+              // backgroundColor: 'transparent' is implicit on web
             } : { flex: 1 }}
           >
             <Stack
               screenOptions={{
                 contentStyle: Platform.select({
-                  web: { width: '100%', maxWidth: '100%', alignSelf: 'center' },
+                  web: { width: '100%', maxWidth: '100%', alignSelf: 'center', backgroundColor: 'transparent' },
                   default: undefined,
                 }),
                 header: Platform.select({
@@ -97,15 +88,20 @@ export default function RootLayout() {
               }}
             >
               <Stack.Screen name="index" options={{ title: 'Forside' }} />
-              <Stack.Screen name="login" options={{ title: 'Log ind' }} />
-              <Stack.Screen name="register" options={{ title: 'Opret konto' }} />
-              <Stack.Screen name="listings" options={{ title: 'Opslag' }} />
-              <Stack.Screen name="create-listing" options={{ title: 'Opret opslag' }} />
-              <Stack.Screen name="my-listings" options={{ title: 'Mine opslag' }} />
-              <Stack.Screen name="my-applications" options={{ title: 'Mine ansøgninger' }} />
-              <Stack.Screen name="listing-applicants" options={{ title: 'Ansøgere' }} />
-              <Stack.Screen name="chat/[listingId]" options={{ title: 'Chat' }} />
-              <Stack.Screen name="meeting-point/[listingId]" options={{ title: 'Mødested' }} />
+              {/* Backward direction (e.g., after logout) */}
+              <Stack.Screen name="login" options={{ title: 'Log ind', animation: Platform.OS === 'web' ? undefined : 'slide_from_left', animationTypeForReplace: Platform.OS === 'web' ? undefined as any : 'pop' }} />
+
+              {/* Forward flows slide from right */}
+              <Stack.Screen name="register" options={{ title: 'Opret konto', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
+              <Stack.Screen name="listings" options={{ title: 'Opslag', animation: Platform.OS === 'web' ? undefined : 'slide_from_right', animationTypeForReplace: Platform.OS === 'web' ? undefined as any : 'pop' }} />
+              <Stack.Screen name="create-listing" options={{ title: 'Opret opslag', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
+              <Stack.Screen name="my-listings" options={{ title: 'Mine opslag', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
+              <Stack.Screen name="my-applications" options={{ title: 'Mine ansøgninger', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
+              <Stack.Screen name="listing-applicants" options={{ title: 'Ansøgere', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
+              <Stack.Screen name="chat/[listingId]" options={{ title: 'Chat', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
+              <Stack.Screen name="meeting-point/[listingId]" options={{ title: 'Mødested', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
+              {/* If present, also treat receipt upload as forward */}
+              <Stack.Screen name="receipt-upload/[listingId]" options={{ title: 'Kvittering', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
             </Stack>
           </View>
         </View>

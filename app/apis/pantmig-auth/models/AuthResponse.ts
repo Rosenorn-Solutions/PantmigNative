@@ -13,6 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
+import type { Gender } from './Gender';
+import {
+    GenderFromJSON,
+    GenderFromJSONTyped,
+    GenderToJSON,
+    GenderToJSONTyped,
+} from './Gender';
 import type { UserType } from './UserType';
 import {
     UserTypeFromJSON,
@@ -77,22 +84,22 @@ export interface AuthResponse {
     accessTokenExpiration?: Date;
     /**
      * 
-     * @type {string}
-     * @memberof AuthResponse
-     */
-    linkedInId?: string | null;
-    /**
-     * 
-     * @type {string}
-     * @memberof AuthResponse
-     */
-    findJobNuUri?: string | null;
-    /**
-     * 
      * @type {UserType}
      * @memberof AuthResponse
      */
     userType?: UserType;
+    /**
+     * 
+     * @type {Gender}
+     * @memberof AuthResponse
+     */
+    gender?: Gender;
+    /**
+     * 
+     * @type {Date}
+     * @memberof AuthResponse
+     */
+    birthDate?: Date | null;
     /**
      * 
      * @type {number}
@@ -134,9 +141,9 @@ export function AuthResponseFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'accessToken': json['accessToken'] == null ? undefined : json['accessToken'],
         'refreshToken': json['refreshToken'] == null ? undefined : json['refreshToken'],
         'accessTokenExpiration': json['accessTokenExpiration'] == null ? undefined : (new Date(json['accessTokenExpiration'])),
-        'linkedInId': json['linkedInId'] == null ? undefined : json['linkedInId'],
-        'findJobNuUri': json['findJobNuUri'] == null ? undefined : json['findJobNuUri'],
         'userType': json['userType'] == null ? undefined : UserTypeFromJSON(json['userType']),
+        'gender': json['gender'] == null ? undefined : GenderFromJSON(json['gender']),
+        'birthDate': json['birthDate'] == null ? undefined : (new Date(json['birthDate'])),
         'cityId': json['cityId'] == null ? undefined : json['cityId'],
         'cityName': json['cityName'] == null ? undefined : json['cityName'],
     };
@@ -161,9 +168,9 @@ export function AuthResponseToJSONTyped(value?: AuthResponse | null, ignoreDiscr
         'accessToken': value['accessToken'],
         'refreshToken': value['refreshToken'],
         'accessTokenExpiration': value['accessTokenExpiration'] == null ? undefined : ((value['accessTokenExpiration']).toISOString()),
-        'linkedInId': value['linkedInId'],
-        'findJobNuUri': value['findJobNuUri'],
         'userType': UserTypeToJSON(value['userType']),
+        'gender': GenderToJSON(value['gender']),
+        'birthDate': value['birthDate'] === null ? null : ((value['birthDate'] as any)?.toISOString().substring(0,10)),
         'cityId': value['cityId'],
         'cityName': value['cityName'],
     };

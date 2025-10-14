@@ -121,3 +121,24 @@ export const pantmigApiConfig = new ApiConfig({ basePath: apiBasePath, middlewar
 
 // Helper to create domain APIs already wired
 export const createRecycleListingsApi = () => new RecycleListingsApi(pantmigApiConfig);
+
+// Multipart helper with automatic bearer injection + single refresh retry
+export async function authorizedMultipart(path: string, form: FormData, options?: { method?: 'POST' | 'PUT' | 'PATCH'; signal?: AbortSignal; }): Promise<Response> {
+  const method = options?.method || 'POST';
+  const { access, refresh } = await getTokens();
+  const url = `${apiBasePath}${path.startsWith('/') ? path : '/' + path}`;
+  const headers: Record<string, string> = {};
+  if (access) headers['Authorization'] = `Bearer ${access}`;
+  let response = await fetch(url, { method, body: form, headers, signal: options?.signal });
+  if (response.status === 401 && refresh) {
+    const refreshed = await refreshTokens(access, refresh);
+    if (refreshed?.accessToken) {
+      const retryHeaders: Record<string, string> = { Authorization: `Bearer ${refreshed.accessToken}` };
+      response = await fetch(url, { method, body: form, headers: retryHeaders, signal: options?.signal });
+      if (response.ok && authSyncListener) {
+        // authSyncListener already invoked inside refreshTokens; nothing further needed
+      }
+    }
+  }
+  return response;
+}

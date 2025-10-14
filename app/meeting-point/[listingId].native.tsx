@@ -1,8 +1,8 @@
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, Text, TextInput, View } from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import PressableButton from '../../components/PressableButton';
-import MapView, { Marker, PROVIDER_GOOGLE, Region, Camera } from 'react-native-maps';
 import { useAuth } from '../AuthContext';
 import { useToast } from '../Toast';
 import { createRecycleListingsApi } from '../services/api';
@@ -99,6 +99,8 @@ export default function MeetingPointScreen() {
   const [suggestions, setSuggestions] = useState<Array<{ display: string; lat: number; lon: number }>>([]);
   const [region, setRegion] = useState<Region>({ latitude: 55.6761, longitude: 12.5683, latitudeDelta: 0.05, longitudeDelta: 0.05 });
   const mapRef = useRef<MapView | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+  const pendingCenterRef = useRef<MeetingPin | null>(null);
 
   const load = useCallback(async () => {
     if (!token || !idNum) return;
@@ -106,8 +108,8 @@ export default function MeetingPointScreen() {
     try {
       const api = createRecycleListingsApi();
       const l = await api.listingsGetById({ id: idNum });
-      if (l?.meetingLatitude != null && l?.meetingLongitude != null) {
-        setPin({ latitude: l.meetingLatitude, longitude: l.meetingLongitude });
+      if (l?.meetingPointLatitude != null && l?.meetingPointLongtitude != null) {
+        setPin({ latitude: l.meetingPointLatitude, longitude: l.meetingPointLongtitude });
       }
     } catch (e) {
       console.error(e);
@@ -119,15 +121,20 @@ export default function MeetingPointScreen() {
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
-    if (pin) {
-      const next = { latitude: pin.latitude, longitude: pin.longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 };
-      setRegion(next);
-      if (mapRef.current) {
-        const cam: Partial<Camera> = { center: { latitude: pin.latitude, longitude: pin.longitude }, zoom: 15 } as any;
-        try { (mapRef.current as any).animateCamera(cam, { duration: 650 }); } catch {}
-      }
-    }
-  }, [pin?.latitude, pin?.longitude]);
+    if (!pin) return;
+    // Update local region state (for UI/reference), but keep map uncontrolled for stability
+    setRegion({ latitude: pin.latitude, longitude: pin.longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 });
+    const animate = () => {
+      const mv: any = mapRef.current as any;
+      if (!mv) return;
+      const r = { latitude: pin.latitude, longitude: pin.longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 };
+      try { mv.animateToRegion(r, 650); } catch {}
+      try { mv.animateCamera({ center: { latitude: pin.latitude, longitude: pin.longitude }, zoom: 15 }, { duration: 650 }); } catch {}
+      try { mv.fitToCoordinates([{ latitude: pin.latitude, longitude: pin.longitude }], { edgePadding: { top: 64, right: 64, bottom: 64, left: 64 }, animated: true }); } catch {}
+      try { mv.setCamera({ center: { latitude: pin.latitude, longitude: pin.longitude }, zoom: 15 }); } catch {}
+    };
+    if (mapReady) animate(); else pendingCenterRef.current = pin;
+  }, [pin?.latitude, pin?.longitude, mapReady]);
 
   const canEdit = user?.role === 'Donator' && readonly !== '1';
 
@@ -221,8 +228,21 @@ export default function MeetingPointScreen() {
             ref={mapRef}
             style={{ flex: 1 }}
             provider={PROVIDER_GOOGLE}
-            initialRegion={region}
-            region={region}
+            initialRegion={pin ? { latitude: pin.latitude, longitude: pin.longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 } : region}
+            onMapReady={() => {
+              setMapReady(true);
+              // If a pin was set before the map was ready, animate now
+              const p = pendingCenterRef.current;
+              if (p && mapRef.current) {
+                const mv: any = mapRef.current as any;
+                const r = { latitude: p.latitude, longitude: p.longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 };
+                try { mv.animateToRegion(r, 650); } catch {}
+                try { mv.animateCamera({ center: { latitude: p.latitude, longitude: p.longitude }, zoom: 15 }, { duration: 650 }); } catch {}
+                try { mv.fitToCoordinates([{ latitude: p.latitude, longitude: p.longitude }], { edgePadding: { top: 64, right: 64, bottom: 64, left: 64 }, animated: true }); } catch {}
+                try { mv.setCamera({ center: { latitude: p.latitude, longitude: p.longitude }, zoom: 15 }); } catch {}
+                pendingCenterRef.current = null;
+              }
+            }}
             onPress={(e) => {
               if (!canEdit) return;
               const { coordinate } = e.nativeEvent;

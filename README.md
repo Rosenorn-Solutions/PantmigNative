@@ -149,3 +149,28 @@ This approach avoids forking the library and keeps the platform split explicit.
 ## License
 
 Private project. All rights reserved.
+
+## Recent API & Client Updates (Oct 2025)
+
+### Registration Additions
+The backend now requires `gender` and `birthDate` on registration:
+
+| Field | Type | Notes |
+|-------|------|-------|
+| gender | int enum | 0 = Unknown / "Ønsker ikke at oplyse", 1 = Male, 2 = Female |
+| birthDate | date (YYYY-MM-DD) | User must be at least 13 years old |
+
+Auth responses (login + refresh) include these fields; `AuthContext` stores them (birthDate as date-only string) so app state stays in sync.
+
+### Listing Creation Images
+`POST /listings` now accepts JSON or `multipart/form-data` with optional `images`.
+
+Client behavior:
+1. If no images chosen → send JSON body using generated `listingsCreate({ createRecycleListingRequest })`.
+2. If images chosen → build `FormData` with same fields + each image under key `images` (manual fetch until a generator multipart path is emitted).
+
+### Future Enhancements Suggested
+- Provide structured validation error payloads to surface per-field errors in UI.
+- Add config endpoint for max images / size to adapt UI hints.
+- Add structured `items` editing UI (model already exposes `items`).
+

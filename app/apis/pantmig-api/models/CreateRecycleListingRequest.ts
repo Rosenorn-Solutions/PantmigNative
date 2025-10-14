@@ -13,6 +13,14 @@
  */
 
 import { mapValues } from '../runtime';
+import type { CreateRecycleListingItemRequest } from './CreateRecycleListingItemRequest';
+import {
+    CreateRecycleListingItemRequestFromJSON,
+    CreateRecycleListingItemRequestFromJSONTyped,
+    CreateRecycleListingItemRequestToJSON,
+    CreateRecycleListingItemRequestToJSONTyped,
+} from './CreateRecycleListingItemRequest';
+
 /**
  * 
  * @export
@@ -45,18 +53,6 @@ export interface CreateRecycleListingRequest {
     location?: string | null;
     /**
      * 
-     * @type {number}
-     * @memberof CreateRecycleListingRequest
-     */
-    estimatedValue?: number | null;
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateRecycleListingRequest
-     */
-    estimatedAmount?: string | null;
-    /**
-     * 
      * @type {Date}
      * @memberof CreateRecycleListingRequest
      */
@@ -67,6 +63,24 @@ export interface CreateRecycleListingRequest {
      * @memberof CreateRecycleListingRequest
      */
     availableTo?: Date;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateRecycleListingRequest
+     */
+    pickupTimeFrom?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateRecycleListingRequest
+     */
+    pickupTimeTo?: string | null;
+    /**
+     * 
+     * @type {Array<CreateRecycleListingItemRequest>}
+     * @memberof CreateRecycleListingRequest
+     */
+    items?: Array<CreateRecycleListingItemRequest> | null;
 }
 
 /**
@@ -90,10 +104,11 @@ export function CreateRecycleListingRequestFromJSONTyped(json: any, ignoreDiscri
         'description': json['description'] == null ? undefined : json['description'],
         'city': json['city'] == null ? undefined : json['city'],
         'location': json['location'] == null ? undefined : json['location'],
-        'estimatedValue': json['estimatedValue'] == null ? undefined : json['estimatedValue'],
-        'estimatedAmount': json['estimatedAmount'] == null ? undefined : json['estimatedAmount'],
         'availableFrom': json['availableFrom'] == null ? undefined : (new Date(json['availableFrom'])),
         'availableTo': json['availableTo'] == null ? undefined : (new Date(json['availableTo'])),
+        'pickupTimeFrom': json['pickupTimeFrom'] == null ? undefined : json['pickupTimeFrom'],
+        'pickupTimeTo': json['pickupTimeTo'] == null ? undefined : json['pickupTimeTo'],
+        'items': json['items'] == null ? undefined : ((json['items'] as Array<any>).map(CreateRecycleListingItemRequestFromJSON)),
     };
 }
 
@@ -112,10 +127,11 @@ export function CreateRecycleListingRequestToJSONTyped(value?: CreateRecycleList
         'description': value['description'],
         'city': value['city'],
         'location': value['location'],
-        'estimatedValue': value['estimatedValue'],
-        'estimatedAmount': value['estimatedAmount'],
-        'availableFrom': value['availableFrom'] == null ? undefined : ((value['availableFrom']).toISOString()),
-        'availableTo': value['availableTo'] == null ? undefined : ((value['availableTo']).toISOString()),
+        'availableFrom': value['availableFrom'] == null ? undefined : ((value['availableFrom']).toISOString().substring(0,10)),
+        'availableTo': value['availableTo'] == null ? undefined : ((value['availableTo']).toISOString().substring(0,10)),
+        'pickupTimeFrom': value['pickupTimeFrom'],
+        'pickupTimeTo': value['pickupTimeTo'],
+        'items': value['items'] == null ? undefined : ((value['items'] as Array<any>).map(CreateRecycleListingItemRequestToJSON)),
     };
 }
 

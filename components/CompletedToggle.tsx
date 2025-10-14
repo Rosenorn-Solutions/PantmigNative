@@ -8,15 +8,24 @@ interface CompletedToggleProps {
   labelShow?: string;
   labelHide?: string;
   hiddenCount?: number; // number of items currently hidden when showCompleted = false
+  placement?: 'top-right' | 'bottom-right' | 'bottom-center';
 }
 
 /**
  * Reusable pill toggle for showing/hiding completed/closed listings.
  * Keeps styling consistent across donor and recycler views.
  */
-export const CompletedToggle: React.FC<CompletedToggleProps> = ({ showCompleted, onToggle, style, labelShow = 'Vis afsluttede', labelHide = 'Skjul afsluttede', hiddenCount }) => {
+export const CompletedToggle: React.FC<CompletedToggleProps> = ({ showCompleted, onToggle, style, labelShow = 'Vis afsluttede', labelHide = 'Skjul afsluttede', hiddenCount, placement = 'top-right' }) => {
+  let basePos: any;
+  if (placement === 'bottom-right') {
+    basePos = { position: 'absolute' as const, bottom: 8, right: 8 };
+  } else if (placement === 'bottom-center') {
+    basePos = { position: 'absolute' as const, bottom: 8, left: 0, right: 0, alignItems: 'center' as const };
+  } else {
+    basePos = { position: 'absolute' as const, top: 8, right: 8 };
+  }
   return (
-    <View style={[{ position: 'absolute', top: 8, right: 8 }, style]}>
+    <View style={[basePos, style]}>
       <Pressable
         onPress={onToggle}
         style={({ pressed }) => ({

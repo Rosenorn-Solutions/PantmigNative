@@ -13,6 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
+import type { Gender } from './Gender';
+import {
+    GenderFromJSON,
+    GenderFromJSONTyped,
+    GenderToJSON,
+    GenderToJSONTyped,
+} from './Gender';
 import type { UserType } from './UserType';
 import {
     UserTypeFromJSON,
@@ -71,6 +78,18 @@ export interface RegisterRequest {
     userType?: UserType;
     /**
      * 
+     * @type {Gender}
+     * @memberof RegisterRequest
+     */
+    gender?: Gender;
+    /**
+     * 
+     * @type {Date}
+     * @memberof RegisterRequest
+     */
+    birthDate?: Date | null;
+    /**
+     * 
      * @type {string}
      * @memberof RegisterRequest
      */
@@ -103,6 +122,8 @@ export function RegisterRequestFromJSONTyped(json: any, ignoreDiscriminator: boo
         'phone': json['phone'] == null ? undefined : json['phone'],
         'mitId': json['mitId'] == null ? undefined : json['mitId'],
         'userType': json['userType'] == null ? undefined : UserTypeFromJSON(json['userType']),
+        'gender': json['gender'] == null ? undefined : GenderFromJSON(json['gender']),
+        'birthDate': json['birthDate'] == null ? undefined : (new Date(json['birthDate'])),
         'city': json['city'] == null ? undefined : json['city'],
     };
 }
@@ -125,6 +146,8 @@ export function RegisterRequestToJSONTyped(value?: RegisterRequest | null, ignor
         'phone': value['phone'],
         'mitId': value['mitId'],
         'userType': UserTypeToJSON(value['userType']),
+        'gender': GenderToJSON(value['gender']),
+        'birthDate': value['birthDate'] === null ? null : ((value['birthDate'] as any)?.toISOString().substring(0,10)),
         'city': value['city'],
     };
 }

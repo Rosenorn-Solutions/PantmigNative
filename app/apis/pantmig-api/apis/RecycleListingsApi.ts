@@ -23,7 +23,7 @@ import type {
   MeetingPointRequest,
   PickupConfirmRequest,
   PickupRequest,
-  RecycleListing,
+  RecycleListingResponse,
 } from '../models/index';
 import {
     AcceptRequestFromJSON,
@@ -42,8 +42,8 @@ import {
     PickupConfirmRequestToJSON,
     PickupRequestFromJSON,
     PickupRequestToJSON,
-    RecycleListingFromJSON,
-    RecycleListingToJSON,
+    RecycleListingResponseFromJSON,
+    RecycleListingResponseToJSON,
 } from '../models/index';
 
 export interface ListingsApplicantsGetRequest {
@@ -225,7 +225,7 @@ export class RecycleListingsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Creates a new recycle listing. Requires a verified Donator.
+     * Creates a new recycle listing with structured item contents. Supports either JSON body (application/json) or multipart/form-data (fields: title, description, city/location, availableFrom, availableTo, optional pickupTimeFrom/pickupTimeTo, items as JSON string, images as image/_*). Requires a verified Donator.
      * Create a new listing
      */
     async listingsCreateRaw(requestParameters: ListingsCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
@@ -261,7 +261,7 @@ export class RecycleListingsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Creates a new recycle listing. Requires a verified Donator.
+     * Creates a new recycle listing with structured item contents. Supports either JSON body (application/json) or multipart/form-data (fields: title, description, city/location, availableFrom, availableTo, optional pickupTimeFrom/pickupTimeTo, items as JSON string, images as image/_*). Requires a verified Donator.
      * Create a new listing
      */
     async listingsCreate(requestParameters: ListingsCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
@@ -272,7 +272,7 @@ export class RecycleListingsApi extends runtime.BaseAPI {
      * Returns all listings that are currently active and available.
      * Get active recycle listings
      */
-    async listingsGetActiveRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RecycleListing>>> {
+    async listingsGetActiveRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RecycleListingResponse>>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -291,14 +291,14 @@ export class RecycleListingsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(RecycleListingFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(RecycleListingResponseFromJSON));
     }
 
     /**
      * Returns all listings that are currently active and available.
      * Get active recycle listings
      */
-    async listingsGetActive(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<RecycleListing>> {
+    async listingsGetActive(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<RecycleListingResponse>> {
         const response = await this.listingsGetActiveRaw(initOverrides);
         return await response.value();
     }
@@ -307,7 +307,7 @@ export class RecycleListingsApi extends runtime.BaseAPI {
      * Retrieves a single recycle listing by its identifier.
      * Get a listing by id
      */
-    async listingsGetByIdRaw(requestParameters: ListingsGetByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RecycleListing>> {
+    async listingsGetByIdRaw(requestParameters: ListingsGetByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RecycleListingResponse>> {
         if (requestParameters['id'] == null) {
             throw new runtime.RequiredError(
                 'id',
@@ -334,14 +334,14 @@ export class RecycleListingsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => RecycleListingFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => RecycleListingResponseFromJSON(jsonValue));
     }
 
     /**
      * Retrieves a single recycle listing by its identifier.
      * Get a listing by id
      */
-    async listingsGetById(requestParameters: ListingsGetByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RecycleListing> {
+    async listingsGetById(requestParameters: ListingsGetByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RecycleListingResponse> {
         const response = await this.listingsGetByIdRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -394,7 +394,7 @@ export class RecycleListingsApi extends runtime.BaseAPI {
      * Returns all listings created by the authenticated donator, including cancelled and completed.
      * Get my listings
      */
-    async listingsMyRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RecycleListing>>> {
+    async listingsMyRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RecycleListingResponse>>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -413,14 +413,14 @@ export class RecycleListingsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(RecycleListingFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(RecycleListingResponseFromJSON));
     }
 
     /**
      * Returns all listings created by the authenticated donator, including cancelled and completed.
      * Get my listings
      */
-    async listingsMy(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<RecycleListing>> {
+    async listingsMy(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<RecycleListingResponse>> {
         const response = await this.listingsMyRaw(initOverrides);
         return await response.value();
     }
@@ -429,7 +429,7 @@ export class RecycleListingsApi extends runtime.BaseAPI {
      * Returns all listings the authenticated recycler has applied to.
      * Get my applications
      */
-    async listingsMyApplicationsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RecycleListing>>> {
+    async listingsMyApplicationsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RecycleListingResponse>>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -448,14 +448,14 @@ export class RecycleListingsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(RecycleListingFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(RecycleListingResponseFromJSON));
     }
 
     /**
      * Returns all listings the authenticated recycler has applied to.
      * Get my applications
      */
-    async listingsMyApplications(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<RecycleListing>> {
+    async listingsMyApplications(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<RecycleListingResponse>> {
         const response = await this.listingsMyApplicationsRaw(initOverrides);
         return await response.value();
     }

@@ -2,6 +2,8 @@ apis/AuthApi.ts
 apis/index.ts
 index.ts
 models/AuthResponse.ts
+models/AvailabilityResult.ts
+models/Gender.ts
 models/LoginRequest.ts
 models/LoginResult.ts
 models/RegisterRequest.ts

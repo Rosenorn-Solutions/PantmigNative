@@ -13,6 +13,14 @@
  */
 
 import { mapValues } from '../runtime';
+import type { Gender } from './Gender';
+import {
+    GenderFromJSON,
+    GenderFromJSONTyped,
+    GenderToJSON,
+    GenderToJSONTyped,
+} from './Gender';
+
 /**
  * 
  * @export
@@ -85,7 +93,21 @@ export interface UserInformationDTO {
      * @memberof UserInformationDTO
      */
     rating?: number;
+    /**
+     * 
+     * @type {Gender}
+     * @memberof UserInformationDTO
+     */
+    gender?: Gender;
+    /**
+     * 
+     * @type {Date}
+     * @memberof UserInformationDTO
+     */
+    birthDate?: Date | null;
 }
+
+
 
 /**
  * Check if a given object implements the UserInformationDTO interface.
@@ -115,6 +137,8 @@ export function UserInformationDTOFromJSONTyped(json: any, ignoreDiscriminator: 
         'cityId': json['cityId'] == null ? undefined : json['cityId'],
         'cityName': json['cityName'] == null ? undefined : json['cityName'],
         'rating': json['rating'] == null ? undefined : json['rating'],
+        'gender': json['gender'] == null ? undefined : GenderFromJSON(json['gender']),
+        'birthDate': json['birthDate'] == null ? undefined : (new Date(json['birthDate'])),
     };
 }
 
@@ -140,6 +164,8 @@ export function UserInformationDTOToJSONTyped(value?: UserInformationDTO | null,
         'cityId': value['cityId'],
         'cityName': value['cityName'],
         'rating': value['rating'],
+        'gender': GenderToJSON(value['gender']),
+        'birthDate': value['birthDate'] === null ? null : ((value['birthDate'] as any)?.toISOString().substring(0,10)),
     };
 }
 

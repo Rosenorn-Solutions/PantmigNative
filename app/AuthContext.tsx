@@ -18,6 +18,8 @@ type AuthUser = {
   userType?: number;
   cityId?: number | null;
   cityName?: string | null;
+  gender?: number | null; // 0 Unknown, 1 Male, 2 Female
+  birthDate?: string | null; // Stored as YYYY-MM-DD (DateOnly)
   // Add other fields from AuthResponse as needed
 };
 
@@ -148,6 +150,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     let role: 'Donator' | 'Recycler' | undefined = user?.role;
     if (resp.userType === ApiUserType.NUMBER_0) role = 'Donator';
     else if (resp.userType === ApiUserType.NUMBER_1) role = 'Recycler';
+    // Normalize birthDate (DateOnly) to YYYY-MM-DD; backend sends date (no time) but generator wraps as Date.
+    let birthDateStr: string | null | undefined = user?.birthDate ?? null;
+    try {
+      if (resp.birthDate) {
+        const d = new Date(resp.birthDate as any);
+        if (!isNaN(d.getTime())) {
+          birthDateStr = d.toISOString().substring(0, 10);
+        }
+      }
+    } catch {}
     const usr = {
       id: resp.userId ?? user?.id ?? '',
       email: resp.email ?? user?.email ?? '',
@@ -155,8 +167,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       lastName: resp.lastName ?? user?.lastName ?? '',
       role,
       userType: (resp.userType as number | undefined) ?? user?.userType,
-  cityId: resp.cityId ?? user?.cityId ?? null,
-  cityName: resp.cityName ?? user?.cityName ?? null,
+      cityId: resp.cityId ?? user?.cityId ?? null,
+      cityName: resp.cityName ?? user?.cityName ?? null,
+      gender: (resp.gender as number | undefined) ?? user?.gender ?? null,
+      birthDate: birthDateStr ?? null,
     };
     setToken(access);
     setRefreshToken(refresh);

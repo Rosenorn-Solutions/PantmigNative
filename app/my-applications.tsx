@@ -2,15 +2,45 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Redirect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, Text, View } from 'react-native';
+import CompletedToggle from '../components/CompletedToggle';
 import PressableButton from '../components/PressableButton';
-import { ListingStatus } from './apis/pantmig-api/models/ListingStatus';
 import type { RecycleListing } from './apis/pantmig-api/models/RecycleListing';
 import { useAuth } from './AuthContext';
 import { createRecycleListingsApi } from './services/api';
 import { useToast } from './Toast';
-import { getListingStatusView } from './utils/status';
 import { isFinalListing as isFinalListingHelper } from './utils/listings';
-import CompletedToggle from '../components/CompletedToggle';
+import { getListingStatusView } from './utils/status';
+import { colors, radii } from './utils/theme';
+
+const formatDate = (d?: Date | string | null) => {
+  if (!d) return '';
+  try {
+    const date = typeof d === 'string' ? new Date(d) : d;
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  } catch { return ''; }
+};
+const formatTime = (t?: string | null) => {
+  if (!t) return '';
+  // Accept HH:mm or HH:mm:ss
+  const m = /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(t);
+  if (m) {
+    const hh = m[1];
+    const mm = m[2];
+    return `${hh}:${mm}`;
+  }
+  // Fallback: try Date parsing if it's an ISO or full datetime
+  const d = new Date(t);
+  if (!Number.isNaN(d.getTime())) {
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+  // Last resort: return as-is
+  return t;
+};
 
 export default function MyApplicationsScreen() {
   const router = useRouter();
@@ -36,6 +66,10 @@ export default function MyApplicationsScreen() {
       const api = createRecycleListingsApi();
       const items = await api.listingsMyApplications();
       const sorted = [...(items || [])].sort((a, b) => {
+        // Non-final first, then final; within each group sort by createdAt desc
+        const fa = isFinalListing(a) ? 1 : 0;
+        const fb = isFinalListing(b) ? 1 : 0;
+        if (fa !== fb) return fa - fb;
         const ca = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const cb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return cb - ca;
@@ -76,20 +110,36 @@ export default function MyApplicationsScreen() {
         </View>
       ) : (
         <FlatList
-          contentContainerStyle={{ padding: 16 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 96 }}
           data={visibleData}
           keyExtractor={(item) => String(item.id)}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={<Text style={{ padding: 16, textAlign: 'center', color: '#666' }}>Du har ingen ansøgninger.</Text>}
+          // eslint-disable-next-line sonarjs/cognitive-complexity
           renderItem={({ item }) => {
             const isFinal = isFinalListing(item);
-            const hasMeetingPoint = item.meetingLatitude != null && item.meetingLongitude != null;
             const pickupConfirmed = !!item.pickupConfirmedAt;
             return (
-              <View style={{ padding: 12, borderWidth: 1, borderColor: isFinal ? '#cbd5e1' : '#ddd', marginBottom: 12, borderRadius: 8, backgroundColor: isFinal ? '#f1f5f9' : '#fff', opacity: isFinal ? 0.85 : 1 }}>
+              <View style={{ padding: 12, borderWidth: 1, borderColor: colors.cardBorder, marginBottom: 12, borderRadius: radii.card, backgroundColor: isFinal ? colors.cardFinalBg : colors.cardBg }}>
                 <Text style={{ fontWeight: '600', marginBottom: 4 }}>{item.title}</Text>
                 {item.description ? <Text>{item.description}</Text> : null}
                 {item.location ? <Text style={{ color: '#666' }}>{item.location}</Text> : null}
+                <View style={{ marginTop: 6, gap: 2 }}>
+                  <Text style={{ color: '#374151' }}>
+                    Antal: {(item.items || [])?.reduce((sum: number, it: any) => sum + (it?.quantity || 0), 0)}
+                  </Text>
+                  {(item.availableFrom || item.availableTo) ? (
+                    <Text style={{ color: '#374151' }}>
+                      Tilgængelig: {formatDate(item.availableFrom)}{item.availableTo ? ` – ${formatDate(item.availableTo)}` : ''}
+                    </Text>
+                  ) : null}
+                  {(item.pickupTimeFrom || item.pickupTimeTo) ? (
+                    <Text style={{ color: '#374151' }}>
+                      Afhentningstid: {formatTime(item.pickupTimeFrom)}{item.pickupTimeTo ? ` – ${formatTime(item.pickupTimeTo)}` : ''}
+                    </Text>
+                  ) : null}
+                  <MaterialTypeCheckmarks items={item.items as any[] | null | undefined} />
+                </View>
                 <Text style={{ marginTop: 4, color: getListingStatusView(item).color }}>
                   Status: {getListingStatusView(item).label}
                 </Text>
@@ -107,9 +157,9 @@ export default function MyApplicationsScreen() {
                       iconName="comments"
                     />
                   ) : null}
-                  {item.meetingLatitude != null && item.meetingLongitude != null ? (
+                  {(((item as any).meetingPointLatitude ?? (item as any).meetingLatitude) != null) && (((item as any).meetingPointLongtitude ?? (item as any).meetingLongitude) != null) ? (
                     <PressableButton
-                      title={isFinal ? 'Vis mødested (afsluttet)' : 'Vis mødested'}
+                      title="Mødested"
                       onPress={() => {
                         if (isFinal) return;
                         router.push({ pathname: '/meeting-point/[listingId]', params: { listingId: String(item.id) } } as any);
@@ -135,7 +185,22 @@ export default function MyApplicationsScreen() {
           }}
         />
       )}
-  <CompletedToggle showCompleted={showCompleted} onToggle={() => setShowCompleted(s => !s)} hiddenCount={hiddenCount} />
+  <CompletedToggle placement="bottom-right" showCompleted={showCompleted} onToggle={() => setShowCompleted(s => !s)} hiddenCount={hiddenCount} />
+    </View>
+  );
+}
+
+type ItemLike = { materialType?: number | null } | null | undefined;
+function MaterialTypeCheckmarks({ items }: Readonly<{ items?: ItemLike[] | null }>) {
+  const list = items || [];
+  const hasPlast = list.some(it => (it?.materialType as number | undefined) === 1);
+  const hasGlas = list.some(it => (it?.materialType as number | undefined) === 2);
+  const hasCan = list.some(it => (it?.materialType as number | undefined) === 3);
+  return (
+    <View style={{ marginTop: 2 }}>
+      <Text style={{ color: '#374151' }}>Plastikflasker: {hasPlast ? '✅' : '❌'}</Text>
+      <Text style={{ color: '#374151' }}>Glasflasker: {hasGlas ? '✅' : '❌'}</Text>
+      <Text style={{ color: '#374151' }}>Dåser: {hasCan ? '✅' : '❌'}</Text>
     </View>
   );
 }

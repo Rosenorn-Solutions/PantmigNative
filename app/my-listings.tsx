@@ -1,17 +1,16 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { Redirect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import CompletedToggle from '../components/CompletedToggle';
 import PressableButton from '../components/PressableButton';
-import { ListingStatus } from './apis/pantmig-api/models/ListingStatus';
 import type { RecycleListing } from './apis/pantmig-api/models/RecycleListing';
 import { useAuth } from './AuthContext';
 import { createRecycleListingsApi } from './services/api';
 import { useToast } from './Toast';
-import { getListingStatusView } from './utils/status';
 import { isFinalListing as isFinalListingHelper } from './utils/listings';
-import CompletedToggle from '../components/CompletedToggle';
+import { getListingStatusView } from './utils/status';
+import { colors, radii } from './utils/theme';
 
 export default function MyListingsScreen() {
   const router = useRouter();
@@ -24,6 +23,7 @@ export default function MyListingsScreen() {
   const [confirmBusy, setConfirmBusy] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState<RecycleListing | null>(null);
 
   const isFinalListing = useCallback((l: RecycleListing) => isFinalListingHelper(l), []);
 
@@ -41,6 +41,10 @@ export default function MyListingsScreen() {
       const api = createRecycleListingsApi();
       const items = await api.listingsMy();
       const sorted = [...(items || [])].sort((a, b) => {
+        // Non-final first, then final; within each group sort by createdAt desc
+        const fa = isFinalListing(a) ? 1 : 0;
+        const fb = isFinalListing(b) ? 1 : 0;
+        if (fa !== fb) return fa - fb;
         const ca = (a.createdAt ? new Date(a.createdAt).getTime() : 0);
         const cb = (b.createdAt ? new Date(b.createdAt).getTime() : 0);
         return cb - ca;
@@ -88,6 +92,12 @@ export default function MyListingsScreen() {
     }
   };
 
+  const confirmCancel = (listing: RecycleListing) => {
+    if (!listing.id) return;
+    setCancelTarget(listing);
+  };
+  const closeCancelModal = () => setCancelTarget(null);
+
   const openChat = async (listing: RecycleListing) => {
     if (!listing.id) return;
     try {
@@ -117,19 +127,21 @@ export default function MyListingsScreen() {
       [
         { text: 'Annullér', style: 'cancel' },
         {
-          text: 'Ja, færdiggør', style: 'destructive', onPress: async () => {
-            try {
-              setConfirmBusy(listing.id!);
-              const api = createRecycleListingsApi();
-              await api.listingsPickupConfirm({ pickupConfirmRequest: { listingId: listing.id } });
-              show('Afhentning bekræftet – tak!', 'success');
-              await load();
-            } catch (e) {
-              console.error(e);
-              show('Kunne ikke bekræfte afhentning', 'error');
-            } finally {
-              setConfirmBusy(null);
-            }
+          text: 'Ja, færdiggør', style: 'destructive', onPress: () => {
+            (async () => {
+              try {
+                setConfirmBusy(listing.id!);
+                const api = createRecycleListingsApi();
+                await api.listingsPickupConfirm({ pickupConfirmRequest: { listingId: listing.id } });
+                show('Afhentning bekræftet – tak!', 'success');
+                await load();
+              } catch (e) {
+                console.error(e);
+                show('Kunne ikke bekræfte afhentning', 'error');
+              } finally {
+                setConfirmBusy(null);
+              }
+            })();
           }
         }
       ]
@@ -144,25 +156,46 @@ export default function MyListingsScreen() {
         </View>
       ) : (
         <FlatList
-          contentContainerStyle={{ padding: 16 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 96 }}
           data={visibleData}
           keyExtractor={(item) => String(item.id)}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       ListEmptyComponent={<Text style={{ padding: 16, textAlign: 'center', color: '#666' }}>Ingen opslag at vise.</Text>}
+          // eslint-disable-next-line sonarjs/cognitive-complexity
           renderItem={({ item }) => {
             const isFinal = isFinalListing(item);
             const hasAssigned = !!item.assignedRecyclerUserId;
             const canConfirmPickup = !isFinal && !!item.meetingSetAt && !!item.assignedRecyclerUserId && !item.pickupConfirmedAt;
+            let chatTitle = 'Chat';
+            if (isFinal) chatTitle = 'Chat (afsluttet)';
+            if (chatBusy === item.id) chatTitle = 'Åbner…';
+            // use file-scope formatDate/formatTime
             return (
-              <View style={{ padding: 12, borderWidth: 1, borderColor: isFinal ? '#cbd5e1' : '#ddd', marginBottom: 12, borderRadius: 8, backgroundColor: isFinal ? '#f1f5f9' : '#fff', opacity: isFinal ? 0.85 : 1 }}>
+              <View style={{ padding: 12, borderWidth: 1, borderColor: colors.cardBorder, marginBottom: 12, borderRadius: radii.card, backgroundColor: isFinal ? colors.cardFinalBg : colors.cardBg }}>
                 <Text style={{ fontWeight: '600', marginBottom: 4 }}>{item.title}</Text>
                 {item.description ? <Text>{item.description}</Text> : null}
                 {item.location ? <Text style={{ color: '#666' }}>{item.location}</Text> : null}
+                <View style={{ marginTop: 6, gap: 2 }}>
+                  <Text style={{ color: '#374151' }}>
+                    Antal: {(item.items || [])?.reduce((sum: number, it: any) => sum + (it?.quantity || 0), 0)}
+                  </Text>
+                  {(item.availableFrom || item.availableTo) ? (
+                    <Text style={{ color: '#374151' }}>
+                      Tilgængelig: {formatDate(item.availableFrom)}{item.availableTo ? ` – ${formatDate(item.availableTo)}` : ''}
+                    </Text>
+                  ) : null}
+                  {(item.pickupTimeFrom || item.pickupTimeTo) ? (
+                    <Text style={{ color: '#374151' }}>
+                      Afhentningstid: {formatTime(item.pickupTimeFrom)}{item.pickupTimeTo ? ` – ${formatTime(item.pickupTimeTo)}` : ''}
+                    </Text>
+                  ) : null}
+                  <MaterialTypeCheckmarks items={item.items as any[] | null | undefined} />
+                </View>
                 <Text style={{ marginTop: 4, color: getListingStatusView(item).color }}>
                   Status: {getListingStatusView(item).label}
                 </Text>
                 {isFinal ? <Text style={{ marginTop: 4, fontSize: 12, color: '#475569' }}>Afsluttet</Text> : null}
-                <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                   {!item.assignedRecyclerUserId ? (
                     <PressableButton
                       title="Se ansøgere"
@@ -177,7 +210,7 @@ export default function MyListingsScreen() {
                   ) : null}
                   {item.assignedRecyclerUserId ? (
                     <PressableButton
-                      title={chatBusy === item.id ? 'Åbner…' : (isFinal ? 'Chat (afsluttet)' : 'Chat')}
+                      title={chatTitle}
                       onPress={() => openChat(item)}
                       disabled={chatBusy === item.id || isFinal}
                       color="#2563eb"
@@ -186,20 +219,11 @@ export default function MyListingsScreen() {
                   ) : null}
                   {item.chatSessionId ? (
                     <PressableButton
-                      title={(item.meetingLatitude != null && item.meetingLongitude != null) ? 'Mødested' : 'Sæt mødested'}
+                      title={(((item as any).meetingPointLatitude ?? (item as any).meetingLatitude) != null && ((item as any).meetingPointLongtitude ?? (item as any).meetingLongitude) != null) ? 'Mødested' : 'Sæt mødested'}
                       disabled={isFinal}
                       onPress={() => router.push({ pathname: '/meeting-point/[listingId]', params: { listingId: String(item.id), readonly: isFinal ? '1' : '0' } } as any)}
                       color="#050f96ff"
                       iconName="location-dot"
-                    />
-                  ) : null}
-                  {!item.meetingSetAt ? (
-                    <PressableButton
-                      title={busy === item.id ? 'Annullerer…' : 'Annullér'}
-                      color="#dc2626"
-                      onPress={() => cancelListing(item)}
-                      disabled={busy === item.id || isFinal}
-                      iconName="circle-minus"
                     />
                   ) : null}
                   {canConfirmPickup ? (
@@ -211,13 +235,135 @@ export default function MyListingsScreen() {
                       iconName="check"
                     />
                   ) : null}
+                  {!item.meetingSetAt ? (
+                    <View style={{ marginLeft: 'auto' }}>
+                      <PressableButton
+                        title={busy === item.id ? 'Annullerer…' : 'Annullér'}
+                        color="#dc2626"
+                        onPress={() => confirmCancel(item)}
+                        disabled={busy === item.id || isFinal}
+                        iconName="circle-minus"
+                      />
+                    </View>
+                  ) : null}
                 </View>
               </View>
             );
           }}
         />
       )}
-  <CompletedToggle showCompleted={showCompleted} onToggle={() => setShowCompleted(s => !s)} hiddenCount={hiddenCount} />
+  <CompletedToggle placement="bottom-right" showCompleted={showCompleted} onToggle={() => setShowCompleted(s => !s)} hiddenCount={hiddenCount} />
+      {cancelTarget ? (
+        <View style={modalStyles.overlay}>
+          <Pressable style={modalStyles.backdrop} onPress={closeCancelModal} />
+          <View style={modalStyles.card}>
+            <Text style={modalStyles.title}>Annullér opslag</Text>
+            <Text style={modalStyles.message}>
+              Er du sikker på, at du vil annullere dette opslag? Dette kan ikke fortrydes.
+            </Text>
+            <View style={modalStyles.buttonsRow}>
+              <PressableButton title="Tilbage" color="#6b7280" iconName="arrow-left" onPress={closeCancelModal} />
+              <PressableButton
+                title={busy === cancelTarget.id ? 'Annullerer…' : 'Ja, annullér'}
+                color="#dc2626"
+                iconName="circle-minus"
+                onPress={() => { void cancelListing(cancelTarget); closeCancelModal(); }}
+                disabled={busy === cancelTarget.id}
+              />
+            </View>
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+ 
+
+const modalStyles = StyleSheet.create({
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 50,
+  },
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.45)'
+  },
+  card: {
+    width: '92%',
+    maxWidth: 420,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 6,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 6,
+    color: '#111827',
+  },
+  message: {
+    color: '#374151',
+  },
+  buttonsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+    justifyContent: 'flex-end',
+  },
+});
+const formatDate = (d?: Date | string | null) => {
+  if (!d) return '';
+  try {
+    const date = typeof d === 'string' ? new Date(d) : d;
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  } catch { return ''; }
+};
+const formatTime = (t?: string | null) => {
+  if (!t) return '';
+  const m = /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(t);
+  if (m) {
+    const hh = m[1];
+    const mm = m[2];
+    return `${hh}:${mm}`;
+  }
+  const d = new Date(t);
+  if (!Number.isNaN(d.getTime())) {
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+  return t;
+};
+
+type ItemLike = { materialType?: number | null } | null | undefined;
+function MaterialTypeCheckmarks({ items }: Readonly<{ items?: ItemLike[] | null }>) {
+  const list = items || [];
+  const hasPlast = list.some(it => (it?.materialType as number | undefined) === 1);
+  const hasGlas = list.some(it => (it?.materialType as number | undefined) === 2);
+  const hasCan = list.some(it => (it?.materialType as number | undefined) === 3);
+  return (
+    <View style={{ marginTop: 2 }}>
+      <Text style={{ color: '#374151' }}>Plastikflasker: {hasPlast ? '✅' : '❌'}</Text>
+      <Text style={{ color: '#374151' }}>Glasflasker: {hasGlas ? '✅' : '❌'}</Text>
+      <Text style={{ color: '#374151' }}>Dåser: {hasCan ? '✅' : '❌'}</Text>
     </View>
   );
 }
