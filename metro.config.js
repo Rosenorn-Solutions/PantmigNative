@@ -1,5 +1,8 @@
-const { getDefaultConfig } = require('expo/metro-config');
-const path = require('path');
+// Use the officially supported @expo/metro-config package rather than expo/metro-config
+// to ensure the default Expo Metro configuration is properly extended (required by EAS).
+const { getDefaultConfig } = require('@expo/metro-config');
+// Prefer node:path per lint rule
+const path = require('node:path');
 
 /**
  * Metro configuration (custom resolver hook)
@@ -26,21 +29,24 @@ const path = require('path');
  * so keep it unless you have replaced the dependency with a cross-platform alternative.
  */
 
-module.exports = (async () => {
-  const config = await getDefaultConfig(__dirname);
+// Obtain default config synchronously (avoid top-level await for EAS build compatibility)
+const baseConfig = getDefaultConfig(__dirname);
 
-  const stubPath = path.join(__dirname, 'stubs', 'react-native-maps-web.js');
-  config.resolver = config.resolver || {};
-  const previousResolveRequest = config.resolver.resolveRequest;
-  config.resolver.resolveRequest = (context, moduleName, platform) => {
-    if (platform === 'web' && moduleName === 'react-native-maps') {
-      return { type: 'sourceFile', filePath: stubPath };
-    }
-    if (previousResolveRequest) {
-      return previousResolveRequest(context, moduleName, platform);
-    }
-    return context.resolveRequest(context, moduleName, platform);
-  };
+const stubPath = path.join(__dirname, 'stubs', 'react-native-maps-web.js');
+const previousResolveRequest = baseConfig.resolver && baseConfig.resolver.resolveRequest;
 
-  return config;
-})();
+module.exports = {
+  ...baseConfig,
+  resolver: {
+    ...baseConfig.resolver,
+    resolveRequest(context, moduleName, platform) {
+      if (platform === 'web' && moduleName === 'react-native-maps') {
+        return { type: 'sourceFile', filePath: stubPath };
+      }
+      if (previousResolveRequest) {
+        return previousResolveRequest(context, moduleName, platform);
+      }
+      return context.resolveRequest(context, moduleName, platform);
+    }
+  }
+};
