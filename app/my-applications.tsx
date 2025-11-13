@@ -22,25 +22,6 @@ const formatDate = (d?: Date | string | null) => {
     return `${dd}-${mm}-${yyyy}`;
   } catch { return ''; }
 };
-const formatTime = (t?: string | null) => {
-  if (!t) return '';
-  // Accept HH:mm or HH:mm:ss
-  const m = /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(t);
-  if (m) {
-    const hh = m[1];
-    const mm = m[2];
-    return `${hh}:${mm}`;
-  }
-  // Fallback: try Date parsing if it's an ISO or full datetime
-  const d = new Date(t);
-  if (!Number.isNaN(d.getTime())) {
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
-    return `${hh}:${mm}`;
-  }
-  // Last resort: return as-is
-  return t;
-};
 
 export default function MyApplicationsScreen() {
   const router = useRouter();
@@ -133,11 +114,7 @@ export default function MyApplicationsScreen() {
                       Tilgængelig: {formatDate(item.availableFrom)}{item.availableTo ? ` – ${formatDate(item.availableTo)}` : ''}
                     </Text>
                   ) : null}
-                  {(item.pickupTimeFrom || item.pickupTimeTo) ? (
-                    <Text style={{ color: '#374151' }}>
-                      Afhentningstid: {formatTime(item.pickupTimeFrom)}{item.pickupTimeTo ? ` – ${formatTime(item.pickupTimeTo)}` : ''}
-                    </Text>
-                  ) : null}
+                  {/* Pickup time removed */}
                   <MaterialTypeCheckmarks items={item.items as any[] | null | undefined} />
                 </View>
                 <Text style={{ marginTop: 4, color: getListingStatusView(item).color }}>
