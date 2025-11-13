@@ -66,10 +66,10 @@ jobs:
           username: ${{ vars.SERVER_USER }}
           key: ${{ secrets.SERVER_ROOT_CERTIFICATE }}
           source: "./web-dist/*"
-          target: "/var/www/pantmig/web/releases/${{ github.sha }}"
+          target: "/var/www/pantmig/web/current/"
           strip_components: 1
 
-      - name: Activate release and reload web server
+      - name: Reload web server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ vars.SERVER_NAME }}
@@ -78,17 +78,11 @@ jobs:
           script: |
             set -e
             WEB_ROOT=/var/www/pantmig/web
-            RELEASE_DIR="$WEB_ROOT/releases/${{ github.sha }}"
-            CURRENT_LINK="$WEB_ROOT/current"
-            sudo mkdir -p "$WEB_ROOT/releases"
-            if [ ! -d "$RELEASE_DIR" ]; then
-              echo "ERROR: Release dir $RELEASE_DIR not found" >&2; exit 1;
-            fi
-            # Atomically switch current symlink to new release
-            sudo ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
-            sudo chown -h $USER:$USER "$CURRENT_LINK" || true
-            # Optional: keep last 5 releases
-            cd "$WEB_ROOT/releases" && ls -1t | tail -n +6 | xargs -r sudo rm -rf --
+            CURRENT_DIR="$WEB_ROOT/current"
+            # Ensure current directory exists (artifact was copied there)
+            sudo mkdir -p "$CURRENT_DIR"
+            # Normalize ownership (non-fatal if not needed)
+            sudo chown -R $USER:$USER "$WEB_ROOT" || true
             # Reload nginx if available (ignore errors if not present)
             if command -v sudo >/dev/null 2>&1; then
               sudo systemctl reload nginx || true
