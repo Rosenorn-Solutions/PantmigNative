@@ -1,10 +1,14 @@
-name: Node CI (lint + typecheck)
+name: Pantmig Native CI/CD (web)
 
 on:
   push:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
+
+concurrency:
+  group: pantmig-native-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -40,5 +44,55 @@ jobs:
       - name: Upload web artifact
         uses: actions/upload-artifact@v4
         with:
-          name: web-dist-${{ matrix.node-version }}
+          name: web-dist
           path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: Development
+    if: github.event_name == 'push'
+    steps:
+      - name: Download web artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: ./web-dist
+
+      - name: Deploy web via SCP (to release dir)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.SERVER_NAME }}
+          username: ${{ vars.SERVER_USER }}
+          key: ${{ secrets.SERVER_ROOT_CERTIFICATE }}
+          source: "./web-dist/*"
+          target: "/var/www/pantmig/web/releases/${{ github.sha }}"
+          strip_components: 1
+
+      - name: Activate release and reload web server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.SERVER_NAME }}
+          username: ${{ vars.SERVER_USER }}
+          key: ${{ secrets.SERVER_ROOT_CERTIFICATE }}
+          script: |
+            set -e
+            WEB_ROOT=/var/www/pantmig/web
+            RELEASE_DIR="$WEB_ROOT/releases/${{ github.sha }}"
+            CURRENT_LINK="$WEB_ROOT/current"
+            sudo mkdir -p "$WEB_ROOT/releases"
+            if [ ! -d "$RELEASE_DIR" ]; then
+              echo "ERROR: Release dir $RELEASE_DIR not found" >&2; exit 1;
+            fi
+            # Atomically switch current symlink to new release
+            sudo ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
+            sudo chown -h $USER:$USER "$CURRENT_LINK" || true
+            # Optional: keep last 5 releases
+            cd "$WEB_ROOT/releases" && ls -1t | tail -n +6 | xargs -r sudo rm -rf --
+            # Reload nginx if available (ignore errors if not present)
+            if command -v sudo >/dev/null 2>&1; then
+              sudo systemctl reload nginx || true
+            fi
+            # Restart pantmig web service if present (optional when serving via Node static server)
+            sudo systemctl restart pantmigweb.service || echo "pantmigweb.service restart failed or not present"
+            sudo systemctl status pantmigweb.service --no-pager || true
