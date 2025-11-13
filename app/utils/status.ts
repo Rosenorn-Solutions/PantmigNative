@@ -9,7 +9,8 @@ export function getListingStatusView(item: RecycleListing): StatusView {
 
   switch (item.status) {
     case ListingStatus.NUMBER_0:
-      return { label: 'Oprettet', color: '#6b7280' };
+      // Treat newly created as active/green in UI
+      return { label: 'Aktiv', color: '#059669' };
     case ListingStatus.NUMBER_1:
       return { label: 'Aktiv', color: '#059669' };
     case ListingStatus.NUMBER_2:

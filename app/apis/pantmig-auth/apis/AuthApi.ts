@@ -60,6 +60,11 @@ export interface AuthCheckPhoneRequest {
     phone: string;
 }
 
+export interface AuthConfirmEmailRequest {
+    userId: string;
+    token: string;
+}
+
 export interface AuthGetUserByIdRequest {
     id: string;
 }
@@ -175,6 +180,62 @@ export class AuthApi extends runtime.BaseAPI {
     async authCheckPhone(requestParameters: AuthCheckPhoneRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AvailabilityResult> {
         const response = await this.authCheckPhoneRaw(requestParameters, initOverrides);
         return await response.value();
+    }
+
+    /**
+     * Verifies the email confirmation token and marks the user\'s email as confirmed.
+     * Confirm user email
+     */
+    async authConfirmEmailRaw(requestParameters: AuthConfirmEmailRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['userId'] == null) {
+            throw new runtime.RequiredError(
+                'userId',
+                'Required parameter "userId" was null or undefined when calling authConfirmEmail().'
+            );
+        }
+
+        if (requestParameters['token'] == null) {
+            throw new runtime.RequiredError(
+                'token',
+                'Required parameter "token" was null or undefined when calling authConfirmEmail().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['userId'] != null) {
+            queryParameters['userId'] = requestParameters['userId'];
+        }
+
+        if (requestParameters['token'] != null) {
+            queryParameters['token'] = requestParameters['token'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["Authorization"] = await this.configuration.apiKey("Authorization"); // Bearer authentication
+        }
+
+
+        let urlPath = `/auth/confirm-email`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Verifies the email confirmation token and marks the user\'s email as confirmed.
+     * Confirm user email
+     */
+    async authConfirmEmail(requestParameters: AuthConfirmEmailRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.authConfirmEmailRaw(requestParameters, initOverrides);
     }
 
     /**

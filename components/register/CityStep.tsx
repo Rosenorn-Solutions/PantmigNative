@@ -85,13 +85,13 @@ export default function CityStep({ cityQuery, cityOpen, cityResults, cityLoading
               )}
               {!cityLoading && cityResults.length > 0 && (
                 <ScrollView style={{ maxHeight: 240 }} keyboardShouldPersistTaps="always" focusable={false}>
-                  {cityResults.map((c) => {
+                  {cityResults.map((c, idx) => {
                   const pcs = c.postalCodes?.slice(0, 3).join(', ');
                   const hasMore = (c.postalCodes?.length ?? 0) > 3;
                   let suffix = '';
                   if (pcs && pcs.length > 0) suffix = ` (${pcs}${hasMore ? '…' : ''})`;
                   return (
-                    <Pressable key={c.id} focusable={false} onPress={() => handleSelect(c)} style={({ pressed }) => [styles.dropdownItem, pressed && styles.dropdownItemPressed]}>
+                    <Pressable key={c.externalId || c.name || String(idx)} focusable={false} onPress={() => handleSelect(c)} style={({ pressed }) => [styles.dropdownItem, pressed && styles.dropdownItemPressed]}>
                       <Text style={styles.dropdownText}>{c.name}{suffix}</Text>
                     </Pressable>
                   );

@@ -1,9 +1,10 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { Redirect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import CompletedToggle from '../components/CompletedToggle';
 import PressableButton from '../components/PressableButton';
+import { ListingStatus } from './apis/pantmig-api/models/ListingStatus';
 import type { RecycleListing } from './apis/pantmig-api/models/RecycleListing';
 import { useAuth } from './AuthContext';
 import { createRecycleListingsApi } from './services/api';
@@ -24,6 +25,7 @@ export default function MyListingsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<RecycleListing | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<RecycleListing | null>(null);
 
   const isFinalListing = useCallback((l: RecycleListing) => isFinalListingHelper(l), []);
 
@@ -121,31 +123,7 @@ export default function MyListingsScreen() {
 
   const confirmPickup = (listing: RecycleListing) => {
     if (!listing.id) return;
-    Alert.alert(
-      'Bekræft afhentning',
-      'Er du sikker på at pantet er afhentet? Dette afslutter opslaget.',
-      [
-        { text: 'Annullér', style: 'cancel' },
-        {
-          text: 'Ja, færdiggør', style: 'destructive', onPress: () => {
-            (async () => {
-              try {
-                setConfirmBusy(listing.id!);
-                const api = createRecycleListingsApi();
-                await api.listingsPickupConfirm({ pickupConfirmRequest: { listingId: listing.id } });
-                show('Afhentning bekræftet – tak!', 'success');
-                await load();
-              } catch (e) {
-                console.error(e);
-                show('Kunne ikke bekræfte afhentning', 'error');
-              } finally {
-                setConfirmBusy(null);
-              }
-            })();
-          }
-        }
-      ]
-    );
+    setConfirmTarget(listing);
   };
 
   return (
@@ -165,7 +143,8 @@ export default function MyListingsScreen() {
           renderItem={({ item }) => {
             const isFinal = isFinalListing(item);
             const hasAssigned = !!item.assignedRecyclerUserId;
-            const canConfirmPickup = !isFinal && !!item.meetingSetAt && !!item.assignedRecyclerUserId && !item.pickupConfirmedAt;
+            // Show 'Færdiggør' when listing is accepted (status 2) and not already pickup-confirmed
+            const canConfirmPickup = !isFinal && item.status === ListingStatus.NUMBER_2 && !!item.assignedRecyclerUserId && !item.pickupConfirmedAt;
             let chatTitle = 'Chat';
             if (isFinal) chatTitle = 'Chat (afsluttet)';
             if (chatBusy === item.id) chatTitle = 'Åbner…';
@@ -184,11 +163,7 @@ export default function MyListingsScreen() {
                       Tilgængelig: {formatDate(item.availableFrom)}{item.availableTo ? ` – ${formatDate(item.availableTo)}` : ''}
                     </Text>
                   ) : null}
-                  {(item.pickupTimeFrom || item.pickupTimeTo) ? (
-                    <Text style={{ color: '#374151' }}>
-                      Afhentningstid: {formatTime(item.pickupTimeFrom)}{item.pickupTimeTo ? ` – ${formatTime(item.pickupTimeTo)}` : ''}
-                    </Text>
-                  ) : null}
+                  {/* Pickup time removed */}
                   <MaterialTypeCheckmarks items={item.items as any[] | null | undefined} />
                 </View>
                 <Text style={{ marginTop: 4, color: getListingStatusView(item).color }}>
@@ -196,7 +171,7 @@ export default function MyListingsScreen() {
                 </Text>
                 {isFinal ? <Text style={{ marginTop: 4, fontSize: 12, color: '#475569' }}>Afsluttet</Text> : null}
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                  {!item.assignedRecyclerUserId ? (
+                  {hasAssigned ? null : (
                     <PressableButton
                       title="Se ansøgere"
                       disabled={isFinal || hasAssigned}
@@ -207,7 +182,7 @@ export default function MyListingsScreen() {
                       color="#6b7280"
                       iconName="user-group"
                     />
-                  ) : null}
+                  )}
                   {item.assignedRecyclerUserId ? (
                     <PressableButton
                       title={chatTitle}
@@ -235,7 +210,7 @@ export default function MyListingsScreen() {
                       iconName="check"
                     />
                   ) : null}
-                  {!item.meetingSetAt ? (
+                  {item.meetingSetAt ? null : (
                     <View style={{ marginLeft: 'auto' }}>
                       <PressableButton
                         title={busy === item.id ? 'Annullerer…' : 'Annullér'}
@@ -245,7 +220,7 @@ export default function MyListingsScreen() {
                         iconName="circle-minus"
                       />
                     </View>
-                  ) : null}
+                  )}
                 </View>
               </View>
             );
@@ -274,6 +249,46 @@ export default function MyListingsScreen() {
           </View>
         </View>
       ) : null}
+
+      {/* Confirm pickup modal */}
+      <Modal visible={!!confirmTarget} transparent animationType="fade" onRequestClose={() => setConfirmTarget(null)}>
+        <View style={modalStyles.overlay}>
+          <Pressable style={modalStyles.backdrop} onPress={() => setConfirmTarget(null)} />
+          <View style={modalStyles.card}>
+            <Text style={modalStyles.title}>Bekræft afhentning</Text>
+            <Text style={modalStyles.message}>
+              Er du sikker på at pantet er afhentet? Dette afslutter opslaget.
+            </Text>
+            <View style={modalStyles.buttonsRow}>
+              <PressableButton title="Tilbage" color="#6b7280" iconName="arrow-left" onPress={() => setConfirmTarget(null)} />
+              <PressableButton
+                title={confirmBusy === confirmTarget?.id ? 'Bekræfter…' : 'Ja, færdiggør'}
+                color="#16a34a"
+                iconName="check"
+                onPress={() => {
+                  if (!confirmTarget?.id) return;
+                  (async () => {
+                    try {
+                      setConfirmBusy(confirmTarget.id!);
+                      const api = createRecycleListingsApi();
+                      await api.listingsPickupConfirm({ pickupConfirmRequest: { listingId: confirmTarget.id } });
+                      show('Afhentning bekræftet – tak!', 'success');
+                      await load();
+                      setConfirmTarget(null);
+                    } catch (e) {
+                      console.error(e);
+                      show('Kunne ikke bekræfte afhentning', 'error');
+                    } finally {
+                      setConfirmBusy(null);
+                    }
+                  })();
+                }}
+                disabled={confirmBusy === confirmTarget?.id}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -336,22 +351,7 @@ const formatDate = (d?: Date | string | null) => {
     return `${dd}-${mm}-${yyyy}`;
   } catch { return ''; }
 };
-const formatTime = (t?: string | null) => {
-  if (!t) return '';
-  const m = /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(t);
-  if (m) {
-    const hh = m[1];
-    const mm = m[2];
-    return `${hh}:${mm}`;
-  }
-  const d = new Date(t);
-  if (!Number.isNaN(d.getTime())) {
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
-    return `${hh}:${mm}`;
-  }
-  return t;
-};
+// Pickup times removed
 
 type ItemLike = { materialType?: number | null } | null | undefined;
 function MaterialTypeCheckmarks({ items }: Readonly<{ items?: ItemLike[] | null }>) {

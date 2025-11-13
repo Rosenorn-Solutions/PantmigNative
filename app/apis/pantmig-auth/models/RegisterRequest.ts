@@ -93,7 +93,19 @@ export interface RegisterRequest {
      * @type {string}
      * @memberof RegisterRequest
      */
+    cityExternalId?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof RegisterRequest
+     */
     city?: string | null;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof RegisterRequest
+     */
+    isOrganization?: boolean;
 }
 
 
@@ -124,7 +136,9 @@ export function RegisterRequestFromJSONTyped(json: any, ignoreDiscriminator: boo
         'userType': json['userType'] == null ? undefined : UserTypeFromJSON(json['userType']),
         'gender': json['gender'] == null ? undefined : GenderFromJSON(json['gender']),
         'birthDate': json['birthDate'] == null ? undefined : (new Date(json['birthDate'])),
+        'cityExternalId': json['cityExternalId'] == null ? undefined : json['cityExternalId'],
         'city': json['city'] == null ? undefined : json['city'],
+        'isOrganization': json['isOrganization'] == null ? undefined : json['isOrganization'],
     };
 }
 
@@ -148,7 +162,9 @@ export function RegisterRequestToJSONTyped(value?: RegisterRequest | null, ignor
         'userType': UserTypeToJSON(value['userType']),
         'gender': GenderToJSON(value['gender']),
         'birthDate': value['birthDate'] === null ? null : ((value['birthDate'] as any)?.toISOString().substring(0,10)),
+        'cityExternalId': value['cityExternalId'],
         'city': value['city'],
+        'isOrganization': value['isOrganization'],
     };
 }
 

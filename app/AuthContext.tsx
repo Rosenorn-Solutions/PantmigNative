@@ -5,6 +5,7 @@ import type { AuthResponse } from './apis/pantmig-auth/models/AuthResponse';
 import type { TokenRefreshRequest } from './apis/pantmig-auth/models/TokenRefreshRequest';
 import { UserType as ApiUserType } from './apis/pantmig-auth/models/UserType';
 import { authApi, setAuthSyncListener } from './services/api';
+import { publishLogout, subscribeAuthBroadcast } from './services/authSync';
 import { useToast } from './Toast';
 
 const AuthContext = createContext(null);
@@ -16,7 +17,7 @@ type AuthUser = {
   lastName?: string;
   role?: 'Donator' | 'Recycler';
   userType?: number;
-  cityId?: number | null;
+  cityExternalId?: string | null;
   cityName?: string | null;
   gender?: number | null; // 0 Unknown, 1 Male, 2 Female
   birthDate?: string | null; // Stored as YYYY-MM-DD (DateOnly)
@@ -47,27 +48,57 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { show } = useToast();
 
   useEffect(() => {
+    const rehydrateUserWithMe = async () => {
+      try {
+        const me = await authApi.authMe();
+        const birthDateStr = me.birthDate ? new Date(me.birthDate as any).toISOString().substring(0, 10) : null;
+        setUser({
+          id: me.id ?? '',
+          email: me.email ?? '',
+          firstName: me.firstName ?? '',
+          lastName: me.lastName ?? '',
+          role: undefined,
+          userType: undefined,
+          cityExternalId: (me as any).cityExternalId ?? null,
+          cityName: me.cityName ?? null,
+          gender: (me.gender as number | undefined) ?? null,
+          birthDate: birthDateStr,
+        });
+      } catch {
+        await logout();
+      }
+    };
+
     const loadUser = async () => {
-      const savedToken = await AsyncStorage.getItem('token');
-      const savedUser = await AsyncStorage.getItem('user');
-      const savedRefresh = await AsyncStorage.getItem('refreshToken');
-      const savedExp = await AsyncStorage.getItem('tokenExpiresAt');
-      if (savedToken && savedUser) {
-        setToken(savedToken);
-        setUser(JSON.parse(savedUser));
-      }
-      if (savedRefresh) {
-        setRefreshToken(savedRefresh);
-      }
+      const [savedToken, savedUser, savedRefresh, savedExp] = await Promise.all([
+        AsyncStorage.getItem('token'),
+        AsyncStorage.getItem('user'),
+        AsyncStorage.getItem('refreshToken'),
+        AsyncStorage.getItem('tokenExpiresAt'),
+      ]);
+      if (savedToken) setToken(savedToken);
+      if (savedRefresh) setRefreshToken(savedRefresh);
       if (savedExp) setExpiresAt(savedExp);
+      if (savedToken) {
+        if (savedUser) { try { setUser(JSON.parse(savedUser)); } catch { /* ignore */ } }
+        else { await rehydrateUserWithMe(); }
+      }
       setLoading(false);
     };
     loadUser();
-  // keep context in sync when middleware refreshes tokens
-  setAuthSyncListener(async (resp: AuthResponse) => {
+    // keep context in sync when middleware refreshes tokens
+    setAuthSyncListener(async (resp: AuthResponse) => {
       await setAuthFromResponse(resp);
     });
-    return () => setAuthSyncListener(null);
+    const unsub = subscribeAuthBroadcast(async (msg) => {
+      if (msg.type === 'tokens-updated') {
+        await setAuthFromResponse(msg.payload);
+      } else if (msg.type === 'logout') {
+        // Prevent broadcast loops: clear locally without emitting another logout event
+        await clearAuth(false);
+      }
+    });
+    return () => { setAuthSyncListener(null); unsub(); };
   }, []);
 
   useEffect(() => {
@@ -111,9 +142,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const result = await authApi.authRefresh({ tokenRefreshRequest: { accessToken: currentToken ?? '', refreshToken: currentRefresh } as TokenRefreshRequest });
       if (result?.accessToken) {
-        await setAuthFromResponse(result as AuthResponse);
+        await setAuthFromResponse(result);
       }
-    } catch (e) {
+    } catch {
       show('Session expired. Please log in again.', 'error', 3500);
       await logout();
     }
@@ -128,7 +159,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return result;
   };
 
-  const logout = async () => {
+  const clearAuth = async (broadcast: boolean) => {
     if (refreshTimerRef.current) {
       clearTimeout(refreshTimerRef.current);
       refreshTimerRef.current = null;
@@ -141,6 +172,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await AsyncStorage.removeItem('refreshToken');
     await AsyncStorage.removeItem('user');
     await AsyncStorage.removeItem('tokenExpiresAt');
+    if (broadcast) publishLogout('manual');
+  };
+
+  const logout = async () => {
+    await clearAuth(true);
   };
 
   const setAuthFromResponse = async (resp: AuthResponse) => {
@@ -155,7 +191,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (resp.birthDate) {
         const d = new Date(resp.birthDate as any);
-        if (!isNaN(d.getTime())) {
+        if (!Number.isNaN(d.getTime())) {
           birthDateStr = d.toISOString().substring(0, 10);
         }
       }
@@ -167,7 +203,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       lastName: resp.lastName ?? user?.lastName ?? '',
       role,
       userType: (resp.userType as number | undefined) ?? user?.userType,
-      cityId: resp.cityId ?? user?.cityId ?? null,
+      cityExternalId: (resp as any).cityExternalId ?? user?.cityExternalId ?? null,
       cityName: resp.cityName ?? user?.cityName ?? null,
       gender: (resp.gender as number | undefined) ?? user?.gender ?? null,
       birthDate: birthDateStr ?? null,

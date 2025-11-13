@@ -100,7 +100,17 @@ export default function ListingChatScreen() {
       setConnectionError(null);
       try {
         const connection = new signalR.HubConnectionBuilder()
-          .withUrl(hubUrl, { accessTokenFactory: () => token })
+          .withUrl(hubUrl, {
+            accessTokenFactory: async () => {
+              try {
+                const apiMod = await import('../services/api');
+                const fresh = await apiMod.ensureFreshAccessToken();
+                return fresh || token || '';
+              } catch {
+                return token || '';
+              }
+            }
+          })
           .withAutomaticReconnect()
           .configureLogging(signalR.LogLevel.Information)
           .build();

@@ -44,6 +44,12 @@ export interface CreateRecycleListingRequest {
      * @type {string}
      * @memberof CreateRecycleListingRequest
      */
+    cityExternalId?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateRecycleListingRequest
+     */
     city?: string | null;
     /**
      * 
@@ -65,16 +71,16 @@ export interface CreateRecycleListingRequest {
     availableTo?: Date;
     /**
      * 
-     * @type {string}
+     * @type {number}
      * @memberof CreateRecycleListingRequest
      */
-    pickupTimeFrom?: string | null;
+    latitude?: number | null;
     /**
      * 
-     * @type {string}
+     * @type {number}
      * @memberof CreateRecycleListingRequest
      */
-    pickupTimeTo?: string | null;
+    longitude?: number | null;
     /**
      * 
      * @type {Array<CreateRecycleListingItemRequest>}
@@ -102,12 +108,13 @@ export function CreateRecycleListingRequestFromJSONTyped(json: any, ignoreDiscri
         
         'title': json['title'] == null ? undefined : json['title'],
         'description': json['description'] == null ? undefined : json['description'],
+        'cityExternalId': json['cityExternalId'] == null ? undefined : json['cityExternalId'],
         'city': json['city'] == null ? undefined : json['city'],
         'location': json['location'] == null ? undefined : json['location'],
         'availableFrom': json['availableFrom'] == null ? undefined : (new Date(json['availableFrom'])),
         'availableTo': json['availableTo'] == null ? undefined : (new Date(json['availableTo'])),
-        'pickupTimeFrom': json['pickupTimeFrom'] == null ? undefined : json['pickupTimeFrom'],
-        'pickupTimeTo': json['pickupTimeTo'] == null ? undefined : json['pickupTimeTo'],
+        'latitude': json['latitude'] == null ? undefined : json['latitude'],
+        'longitude': json['longitude'] == null ? undefined : json['longitude'],
         'items': json['items'] == null ? undefined : ((json['items'] as Array<any>).map(CreateRecycleListingItemRequestFromJSON)),
     };
 }
@@ -125,12 +132,13 @@ export function CreateRecycleListingRequestToJSONTyped(value?: CreateRecycleList
         
         'title': value['title'],
         'description': value['description'],
+        'cityExternalId': value['cityExternalId'],
         'city': value['city'],
         'location': value['location'],
         'availableFrom': value['availableFrom'] == null ? undefined : ((value['availableFrom']).toISOString().substring(0,10)),
         'availableTo': value['availableTo'] == null ? undefined : ((value['availableTo']).toISOString().substring(0,10)),
-        'pickupTimeFrom': value['pickupTimeFrom'],
-        'pickupTimeTo': value['pickupTimeTo'],
+        'latitude': value['latitude'],
+        'longitude': value['longitude'],
         'items': value['items'] == null ? undefined : ((value['items'] as Array<any>).map(CreateRecycleListingItemRequestToJSON)),
     };
 }

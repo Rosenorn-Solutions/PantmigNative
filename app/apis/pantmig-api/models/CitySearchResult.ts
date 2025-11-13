@@ -21,10 +21,10 @@ import { mapValues } from '../runtime';
 export interface CitySearchResult {
     /**
      * 
-     * @type {number}
+     * @type {string}
      * @memberof CitySearchResult
      */
-    id?: number;
+    externalId?: string;
     /**
      * 
      * @type {string}
@@ -56,7 +56,7 @@ export function CitySearchResultFromJSONTyped(json: any, ignoreDiscriminator: bo
     }
     return {
         
-        'id': json['id'] == null ? undefined : json['id'],
+        'externalId': json['externalId'] == null ? undefined : json['externalId'],
         'name': json['name'] == null ? undefined : json['name'],
         'postalCodes': json['postalCodes'] == null ? undefined : json['postalCodes'],
     };
@@ -73,7 +73,7 @@ export function CitySearchResultToJSONTyped(value?: CitySearchResult | null, ign
 
     return {
         
-        'id': value['id'],
+        'externalId': value['externalId'],
         'name': value['name'],
         'postalCodes': value['postalCodes'],
     };

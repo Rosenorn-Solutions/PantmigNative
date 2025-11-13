@@ -90,6 +90,12 @@ export interface AuthResponse {
     userType?: UserType;
     /**
      * 
+     * @type {boolean}
+     * @memberof AuthResponse
+     */
+    isOrganization?: boolean;
+    /**
+     * 
      * @type {Gender}
      * @memberof AuthResponse
      */
@@ -102,10 +108,10 @@ export interface AuthResponse {
     birthDate?: Date | null;
     /**
      * 
-     * @type {number}
+     * @type {string}
      * @memberof AuthResponse
      */
-    cityId?: number | null;
+    cityExternalId?: string | null;
     /**
      * 
      * @type {string}
@@ -142,9 +148,10 @@ export function AuthResponseFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'refreshToken': json['refreshToken'] == null ? undefined : json['refreshToken'],
         'accessTokenExpiration': json['accessTokenExpiration'] == null ? undefined : (new Date(json['accessTokenExpiration'])),
         'userType': json['userType'] == null ? undefined : UserTypeFromJSON(json['userType']),
+        'isOrganization': json['isOrganization'] == null ? undefined : json['isOrganization'],
         'gender': json['gender'] == null ? undefined : GenderFromJSON(json['gender']),
         'birthDate': json['birthDate'] == null ? undefined : (new Date(json['birthDate'])),
-        'cityId': json['cityId'] == null ? undefined : json['cityId'],
+        'cityExternalId': json['cityExternalId'] == null ? undefined : json['cityExternalId'],
         'cityName': json['cityName'] == null ? undefined : json['cityName'],
     };
 }
@@ -169,9 +176,10 @@ export function AuthResponseToJSONTyped(value?: AuthResponse | null, ignoreDiscr
         'refreshToken': value['refreshToken'],
         'accessTokenExpiration': value['accessTokenExpiration'] == null ? undefined : ((value['accessTokenExpiration']).toISOString()),
         'userType': UserTypeToJSON(value['userType']),
+        'isOrganization': value['isOrganization'],
         'gender': GenderToJSON(value['gender']),
         'birthDate': value['birthDate'] === null ? null : ((value['birthDate'] as any)?.toISOString().substring(0,10)),
-        'cityId': value['cityId'],
+        'cityExternalId': value['cityExternalId'],
         'cityName': value['cityName'],
     };
 }

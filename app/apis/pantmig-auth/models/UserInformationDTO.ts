@@ -77,10 +77,16 @@ export interface UserInformationDTO {
     createdAt?: Date;
     /**
      * 
-     * @type {number}
+     * @type {boolean}
      * @memberof UserInformationDTO
      */
-    cityId?: number | null;
+    isOrganization?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof UserInformationDTO
+     */
+    cityExternalId?: string | null;
     /**
      * 
      * @type {string}
@@ -134,7 +140,8 @@ export function UserInformationDTOFromJSONTyped(json: any, ignoreDiscriminator: 
         'phone': json['phone'] == null ? undefined : json['phone'],
         'isEmailConfirmed': json['isEmailConfirmed'] == null ? undefined : json['isEmailConfirmed'],
         'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
-        'cityId': json['cityId'] == null ? undefined : json['cityId'],
+        'isOrganization': json['isOrganization'] == null ? undefined : json['isOrganization'],
+        'cityExternalId': json['cityExternalId'] == null ? undefined : json['cityExternalId'],
         'cityName': json['cityName'] == null ? undefined : json['cityName'],
         'rating': json['rating'] == null ? undefined : json['rating'],
         'gender': json['gender'] == null ? undefined : GenderFromJSON(json['gender']),
@@ -161,7 +168,8 @@ export function UserInformationDTOToJSONTyped(value?: UserInformationDTO | null,
         'phone': value['phone'],
         'isEmailConfirmed': value['isEmailConfirmed'],
         'createdAt': value['createdAt'] == null ? undefined : ((value['createdAt']).toISOString()),
-        'cityId': value['cityId'],
+        'isOrganization': value['isOrganization'],
+        'cityExternalId': value['cityExternalId'],
         'cityName': value['cityName'],
         'rating': value['rating'],
         'gender': GenderToJSON(value['gender']),

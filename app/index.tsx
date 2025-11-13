@@ -5,6 +5,8 @@ import PressableButton from "../components/PressableButton";
 import StatsPreview, { StatsData } from "../components/StatsPreview";
 import { useAuth } from "./AuthContext";
 import { useToast } from "./Toast";
+import { createStatisticsApi } from './services/api';
+import { useNotifications } from './services/notificationsStore';
 
 export default function Index() {
   const router = useRouter();
@@ -13,22 +15,57 @@ export default function Index() {
 
   const [statsLoading, setStatsLoading] = React.useState(true);
   const [stats, setStats] = React.useState<StatsData | null>(null);
+  const { unreadCount } = useNotifications();
 
-  // Mock stats fetch; wire to backend when endpoint is ready
+  // Load statistics from backend for current user role (only when authenticated)
   React.useEffect(() => {
-    let mounted = true;
-    (async () => {
+    let cancelled = false;
+    if (!token) {
+      // Not authenticated: ensure no background fetch happens and reset stats UI state
+      setStats(null);
+      setStatsLoading(false);
+      return () => { cancelled = true; };
+    }
+    const load = async () => {
       try {
         setStatsLoading(true);
-        await new Promise(r => setTimeout(r, 600));
-        if (!mounted) return;
-        setStats({ totalListings: 128, completedPickups: 87, bottlesRecycled: 5420 });
+        const api = createStatisticsApi();
+        let nextStats: StatsData;
+        if (user?.role === 'Recycler') {
+          const res = await api.statisticsRecycler();
+          const totalListings = res.listingCount ?? 0;
+          // Interpret listingCount as completed pickups for recycler dashboard
+          const completedPickups = res.listingCount ?? 0;
+          let bottles = 0;
+          if (Array.isArray(res.breakdown)) {
+            bottles = res.breakdown.reduce((sum, b) => sum + (b.quantity ?? 0), 0);
+          } else if (typeof res.totalItems === 'number') {
+            bottles = res.totalItems;
+          }
+          nextStats = { totalListings, completedPickups, bottlesRecycled: bottles };
+        } else {
+          // Default to donor stats when role is Donator or unknown
+          const res = await api.statisticsDonor();
+          const totalListings = res.listingCount ?? 0;
+          // We don't have explicit completed pickups for donors; show listingCount as a proxy
+          const completedPickups = res.listingCount ?? 0;
+          const bottles = res.totalItems ?? 0;
+          nextStats = { totalListings, completedPickups, bottlesRecycled: bottles };
+        }
+        if (!cancelled) setStats(nextStats);
+      } catch (e) {
+        // Soft-fail: keep zeros and notify once; details logged for debug
+        // eslint-disable-next-line no-console
+        console.warn('Failed to load statistics', e);
+        if (!cancelled) setStats({ totalListings: 0, completedPickups: 0, bottlesRecycled: 0 });
+        show('Kunne ikke hente statistik. Prøv igen senere.', 'error', 2500);
       } finally {
-        if (mounted) setStatsLoading(false);
+        if (!cancelled) setStatsLoading(false);
       }
-    })();
-    return () => { mounted = false; };
-  }, [user?.id]);
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [token, user?.id, user?.role, show]);
 
   if (loading) {
     return (
@@ -62,6 +99,7 @@ export default function Index() {
           <Text style={styles.sectionTitle}>Hurtige handlinger</Text>
       {/* Additional user context (role/city) can be surfaced here if needed */}
         <View style={{ gap: 8 }}>
+          <PressableButton title={unreadCount ? `Notifikationer (${unreadCount})` : 'Notifikationer'} onPress={() => router.push('./notifications')} color="#2563eb" iconName="bell" style={styles.button} />
           {user?.role === 'Recycler' && (
             <>
               <PressableButton title="Se tilgængelige opslag" onPress={() => router.push("./listings")} color="#16a34a" iconName="list" style={styles.button} />

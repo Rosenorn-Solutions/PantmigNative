@@ -21,9 +21,11 @@ import type {
   ChatStartRequest,
   CreateRecycleListingRequest,
   MeetingPointRequest,
+  ObjectPagedSearchRequest,
   PickupConfirmRequest,
   PickupRequest,
   RecycleListingResponse,
+  RecycleListingResponsePagedResult,
 } from '../models/index';
 import {
     AcceptRequestFromJSON,
@@ -38,12 +40,16 @@ import {
     CreateRecycleListingRequestToJSON,
     MeetingPointRequestFromJSON,
     MeetingPointRequestToJSON,
+    ObjectPagedSearchRequestFromJSON,
+    ObjectPagedSearchRequestToJSON,
     PickupConfirmRequestFromJSON,
     PickupConfirmRequestToJSON,
     PickupRequestFromJSON,
     PickupRequestToJSON,
     RecycleListingResponseFromJSON,
     RecycleListingResponseToJSON,
+    RecycleListingResponsePagedResultFromJSON,
+    RecycleListingResponsePagedResultToJSON,
 } from '../models/index';
 
 export interface ListingsApplicantsGetRequest {
@@ -62,7 +68,16 @@ export interface ListingsCreateRequest {
     createRecycleListingRequest: CreateRecycleListingRequest;
 }
 
+export interface ListingsGetActiveRequest {
+    page?: number;
+    pageSize?: number;
+}
+
 export interface ListingsGetByIdRequest {
+    id: number;
+}
+
+export interface ListingsGetReceiptRequest {
     id: number;
 }
 
@@ -86,6 +101,10 @@ export interface ListingsReceiptUploadRequest {
     listingId: number;
     reportedAmount: number;
     file: Blob;
+}
+
+export interface ListingsSearchRequest {
+    objectPagedSearchRequest: ObjectPagedSearchRequest;
 }
 
 /**
@@ -225,7 +244,7 @@ export class RecycleListingsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Creates a new recycle listing with structured item contents. Supports either JSON body (application/json) or multipart/form-data (fields: title, description, city/location, availableFrom, availableTo, optional pickupTimeFrom/pickupTimeTo, items as JSON string, images as image/_*). Requires a verified Donator.
+     * Creates a new recycle listing with structured item contents. Supports either JSON body (application/json) or multipart/form-data (fields: title, description, city, availableFrom, availableTo, optional latitude/longitude, items as JSON string, images as image/_*). Requires a verified Donator.
      * Create a new listing
      */
     async listingsCreateRaw(requestParameters: ListingsCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
@@ -261,7 +280,7 @@ export class RecycleListingsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Creates a new recycle listing with structured item contents. Supports either JSON body (application/json) or multipart/form-data (fields: title, description, city/location, availableFrom, availableTo, optional pickupTimeFrom/pickupTimeTo, items as JSON string, images as image/_*). Requires a verified Donator.
+     * Creates a new recycle listing with structured item contents. Supports either JSON body (application/json) or multipart/form-data (fields: title, description, city, availableFrom, availableTo, optional latitude/longitude, items as JSON string, images as image/_*). Requires a verified Donator.
      * Create a new listing
      */
     async listingsCreate(requestParameters: ListingsCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
@@ -269,11 +288,19 @@ export class RecycleListingsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns all listings that are currently active and available.
-     * Get active recycle listings
+     * Returns active listings, paginated via page and pageSize query params. Defaults: page=1, pageSize=20 (max100).
+     * Get active recycle listings (paged)
      */
-    async listingsGetActiveRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RecycleListingResponse>>> {
+    async listingsGetActiveRaw(requestParameters: ListingsGetActiveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RecycleListingResponsePagedResult>> {
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -291,15 +318,15 @@ export class RecycleListingsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(RecycleListingResponseFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => RecycleListingResponsePagedResultFromJSON(jsonValue));
     }
 
     /**
-     * Returns all listings that are currently active and available.
-     * Get active recycle listings
+     * Returns active listings, paginated via page and pageSize query params. Defaults: page=1, pageSize=20 (max100).
+     * Get active recycle listings (paged)
      */
-    async listingsGetActive(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<RecycleListingResponse>> {
-        const response = await this.listingsGetActiveRaw(initOverrides);
+    async listingsGetActive(requestParameters: ListingsGetActiveRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RecycleListingResponsePagedResult> {
+        const response = await this.listingsGetActiveRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -343,6 +370,49 @@ export class RecycleListingsApi extends runtime.BaseAPI {
      */
     async listingsGetById(requestParameters: ListingsGetByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RecycleListingResponse> {
         const response = await this.listingsGetByIdRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Returns the raw receipt image bytes with correct content-type. Only the listing owner or assigned recycler may download.
+     * Download receipt image for a listing
+     */
+    async listingsGetReceiptRaw(requestParameters: ListingsGetReceiptRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<object>> {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling listingsGetReceipt().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["Authorization"] = await this.configuration.apiKey("Authorization"); // Bearer authentication
+        }
+
+
+        let urlPath = `/listings/{id}/receipt`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse<any>(response);
+    }
+
+    /**
+     * Returns the raw receipt image bytes with correct content-type. Only the listing owner or assigned recycler may download.
+     * Download receipt image for a listing
+     */
+    async listingsGetReceipt(requestParameters: ListingsGetReceiptRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<object> {
+        const response = await this.listingsGetReceiptRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -674,6 +744,51 @@ export class RecycleListingsApi extends runtime.BaseAPI {
      */
     async listingsReceiptUpload(requestParameters: ListingsReceiptUploadRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.listingsReceiptUploadRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Search for listings with pagination. Filters: cityExternalId (optional) and/or coordinates (latitude+longitude within5km). Results exclude listings that the current user has already applied for.
+     * Search listings
+     */
+    async listingsSearchRaw(requestParameters: ListingsSearchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RecycleListingResponsePagedResult>> {
+        if (requestParameters['objectPagedSearchRequest'] == null) {
+            throw new runtime.RequiredError(
+                'objectPagedSearchRequest',
+                'Required parameter "objectPagedSearchRequest" was null or undefined when calling listingsSearch().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["Authorization"] = await this.configuration.apiKey("Authorization"); // Bearer authentication
+        }
+
+
+        let urlPath = `/listings/search`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: ObjectPagedSearchRequestToJSON(requestParameters['objectPagedSearchRequest']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => RecycleListingResponsePagedResultFromJSON(jsonValue));
+    }
+
+    /**
+     * Search for listings with pagination. Filters: cityExternalId (optional) and/or coordinates (latitude+longitude within5km). Results exclude listings that the current user has already applied for.
+     * Search listings
+     */
+    async listingsSearch(requestParameters: ListingsSearchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RecycleListingResponsePagedResult> {
+        const response = await this.listingsSearchRaw(requestParameters, initOverrides);
+        return await response.value();
     }
 
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { InteractionManager, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import type { CitySearchResult } from '../../app/apis/pantmig-api';
+import AddressTypeahead from '../AddressTypeahead';
 import PressableButton from '../PressableButton';
 
 type Styles = {
@@ -20,7 +21,7 @@ type Styles = {
 };
 
 type Props = Readonly<{
-  errors: Readonly<{ title?: string; description?: string; city?: string }>;
+  errors: Readonly<{ title?: string; description?: string; city?: string; location?: string }>;
   cityQuery: string;
   cityOpen: boolean;
   cityResults: readonly CitySearchResult[];
@@ -32,14 +33,21 @@ type Props = Readonly<{
   onCityBlur: () => void;
   onCityPressIn: () => void;
   onCitySelect: (c: CitySearchResult) => void;
-  onLocationChange: (t: string) => void;
+  // Address typeahead (now uses reusable component)
+  addressQuery: string;
+  onAddressChange: (t: string) => void;
+  onAddressSelect: (r: { display: string; lat: number; lon: number }) => void;
+  addressCityHint?: string;
+  onAddressFocus?: () => void;
   onBack: () => void;
   onNext: () => void;
   styles: Styles;
 }>;
 
-export default function DetailsStep({ errors, cityQuery, cityOpen, cityResults, cityLoading, onTitleChange, onDescriptionChange, onCityChange, onCityFocus, onCityBlur, onCityPressIn, onCitySelect, onLocationChange, onBack, onNext, styles }: Props) {
+export default function DetailsStep({ errors, cityQuery, cityOpen, cityResults, cityLoading, onTitleChange, onDescriptionChange, onCityChange, onCityFocus, onCityBlur, onCityPressIn, onCitySelect, addressQuery, onAddressChange, onAddressSelect, addressCityHint, onAddressFocus, onBack, onNext, styles }: Props) {
   const inputRef = React.useRef<TextInput>(null as any);
+  const addressRef = React.useRef<TextInput>(null as any);
+  const [addressCloseTick, setAddressCloseTick] = React.useState(0);
   const handleSelect = React.useCallback((c: CitySearchResult) => {
     onCitySelect(c);
     setTimeout(() => inputRef.current?.focus(), 0);
@@ -64,7 +72,7 @@ export default function DetailsStep({ errors, cityQuery, cityOpen, cityResults, 
       <Text style={styles.webPickerLabel}>Beskrivelse (krævet)</Text>
       <TextInput style={[styles.input, errors.description && styles.inputError]} placeholder="Beskrivelse" onChangeText={onDescriptionChange} />
       {!!errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
-      <View style={[styles.typeaheadContainer, cityOpen && styles.typeaheadOpen]}>
+  <View style={[styles.typeaheadContainer, cityOpen && styles.typeaheadOpen, { zIndex: cityOpen ? 40 : 20 }]}>
         <Text style={styles.webPickerLabel}>By (krævet)</Text>
         <TextInput
           ref={inputRef as any}
@@ -72,7 +80,7 @@ export default function DetailsStep({ errors, cityQuery, cityOpen, cityResults, 
           placeholder="By"
           value={cityQuery}
           onChangeText={onCityChange}
-          onFocus={onCityFocus}
+          onFocus={() => { onCityFocus(); setAddressCloseTick((x) => x + 1); }}
           onBlur={() => {
             if (Platform.OS === 'android' && cityOpen) {
               setTimeout(() => inputRef.current?.focus(), 0);
@@ -90,14 +98,14 @@ export default function DetailsStep({ errors, cityQuery, cityOpen, cityResults, 
             )}
             {!cityLoading && cityResults.length > 0 && (
               <ScrollView style={{ maxHeight: 240 }} keyboardShouldPersistTaps="always" focusable={false}>
-                {cityResults.map((c) => {
+                {cityResults.map((c, idx) => {
                   const pcs = c.postalCodes?.slice(0, 3).join(', ');
                   const hasMore = (c.postalCodes?.length ?? 0) > 3;
                   let suffix = '';
                   if (pcs && pcs.length > 0) suffix = ` (${pcs}${hasMore ? '…' : ''})`;
                   return (
                     <Pressable
-                      key={c.id}
+                      key={c.externalId || c.name || String(idx)}
                       focusable={false}
                       onPress={() => handleSelect(c)}
                       style={({ pressed }) => [styles.dropdownItem, pressed && styles.dropdownItemPressed]}
@@ -111,8 +119,17 @@ export default function DetailsStep({ errors, cityQuery, cityOpen, cityResults, 
           </View>
         )}
       </View>
-      <Text style={styles.webPickerLabel}>Adresse (valgfrit)</Text>
-      <TextInput style={styles.input} placeholder="Adresse (valgfrit)" onChangeText={onLocationChange} />
+      <AddressTypeahead
+        label="Mødested (krævet)"
+        value={addressQuery}
+        error={errors.location}
+        cityHint={addressCityHint}
+        onChangeText={onAddressChange}
+        onSelect={(r) => { onAddressSelect(r); setTimeout(() => addressRef.current?.focus(), 0); }}
+        onFocus={() => { onAddressFocus?.(); }}
+        closeSignal={addressCloseTick}
+        styles={styles as any}
+      />
       <View style={styles.navRow}>
         <PressableButton title="Fortryd" onPress={onBack} color="#6b7280" iconName="arrow-left" style={styles.button} />
         <PressableButton title="Næste" onPress={onNext} color="#2563eb" iconName="arrow-right" style={styles.button} />

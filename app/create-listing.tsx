@@ -10,9 +10,12 @@ import TimeStep from '../components/create-listing/TimeStep';
 import { CitiesApi } from './apis/pantmig-api/apis';
 import type { CitySearchResult } from './apis/pantmig-api/models/CitySearchResult';
 import { CreateRecycleListingRequest } from './apis/pantmig-api/models/CreateRecycleListingRequest';
+import { RecycleMaterialType } from './apis/pantmig-api/models/RecycleMaterialType';
 import { useAuth } from './AuthContext';
 import { authorizedMultipart, createRecycleListingsApi, pantmigApiConfig } from './services/api';
+import { geocodeSearch } from './services/geocoding';
 import { useToast } from './Toast';
+import { buildCityFields } from './utils/cityFields';
 import { formStyles } from './utils/formStyles';
 
 // Web helpers for image compression (module scope to avoid deep nesting in component)
@@ -64,6 +67,7 @@ export default function CreateListingScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   // City typeahead state
   const [cityQuery, setCityQuery] = useState('');
+  const [cityExternalId, setCityExternalId] = useState<string | null>(null);
   const [cityResults, setCityResults] = useState<CitySearchResult[]>([]);
   const [cityOpen, setCityOpen] = useState(false);
   const [cityLoading, setCityLoading] = useState(false);
@@ -71,20 +75,15 @@ export default function CreateListingScreen() {
   // selection is handled onPress inside the dropdown items; avoid separate selectingRef to reduce focus churn
   const suppressNextSearchRef = useRef(false);
   const citiesApi = useMemo(() => new CitiesApi(pantmigApiConfig), []);
+  // Address field state (typeahead handled within AddressTypeahead component)
+  const [addressQuery, setAddressQuery] = useState('');
   const [showFromPicker, setShowFromPicker] = useState(false); // date-only
   const [showToPicker, setShowToPicker] = useState(false);     // date-only
-  const [showPickupFromTimePicker, setShowPickupFromTimePicker] = useState(false);
-  const [showPickupToTimePicker, setShowPickupToTimePicker] = useState(false);
   // Web-only inline pickers
-  const [webFromOpen, setWebFromOpen] = useState(false);
-  const [webToOpen, setWebToOpen] = useState(false);
   const pad = (n: number) => String(n).padStart(2, '0');
   const datePart = (d: Date) => `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}`;
-  const timePart = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`; // used for preview only
   const [fromDateStr, setFromDateStr] = useState<string>('');
-  const [fromTimeStr, setFromTimeStr] = useState<string>('');
   const [toDateStr, setToDateStr] = useState<string>('');
-  const [toTimeStr, setToTimeStr] = useState<string>('');
   const [step, setStep] = useState<number>(0);
   const [dir, setDir] = useState<1 | -1>(1);
   const stepAnim = React.useRef(new Animated.Value(1)).current;
@@ -93,9 +92,9 @@ export default function CreateListingScreen() {
   }, [step]);
   const goTo = (next: number) => { setDir(next > step ? 1 : -1); stepAnim.setValue(0); setStep(next); };
   const MATERIALS = [
-    { type: 1 as any as number, label: 'Plastikflasker' },
-    { type: 2 as any as number, label: 'Glasflasker' },
-    { type: 3 as any as number, label: 'Dåser' },
+    { type: RecycleMaterialType.NUMBER_1, label: 'Plastikflasker' },
+    { type: RecycleMaterialType.NUMBER_2, label: 'Glasflasker' },
+    { type: RecycleMaterialType.NUMBER_3, label: 'Dåser' },
   ];
   const MAX_IMAGES = 6;
   const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -118,24 +117,17 @@ export default function CreateListingScreen() {
       if (!d) return undefined;
       if (d instanceof Date) return d;
       if (typeof d === 'string') {
-        const nd = new Date(d);
-        return isNaN(nd.getTime()) ? undefined : nd;
+  const nd = new Date(d);
+  return Number.isNaN(nd.getTime()) ? undefined : nd;
       }
       return undefined;
     };
-    const city = form.city || cityQuery;
-    // availableFrom/To now date-only; pickupTimeFrom/To come from fromTimeStr/toTimeStr
-    let pickupFromStr: string | undefined = undefined;
-    let pickupToStr: string | undefined = undefined;
-    if (/^\d{2}:\d{2}$/.test(fromTimeStr)) pickupFromStr = fromTimeStr;
-    if (/^\d{2}:\d{2}$/.test(toTimeStr)) pickupToStr = toTimeStr;
+    const cityFields = buildCityFields(cityExternalId, form.city, cityQuery);
     return {
       ...form,
-      city,
+      ...cityFields,
       availableFrom: normalizeDate(form.availableFrom),
       availableTo: normalizeDate(form.availableTo),
-      pickupTimeFrom: pickupFromStr,
-      pickupTimeTo: pickupToStr,
     };
   };
 
@@ -144,30 +136,32 @@ export default function CreateListingScreen() {
     await api.listingsCreate({ createRecycleListingRequest: {
       title: payload.title,
       description: payload.description,
+      cityExternalId: payload.cityExternalId,
       city: payload.city,
       location: payload.location,
       availableFrom: payload.availableFrom,
       availableTo: payload.availableTo,
-      pickupTimeFrom: payload.pickupTimeFrom,
-      pickupTimeTo: payload.pickupTimeTo,
+      latitude: payload.latitude,
+      longitude: payload.longitude,
       items: payload.items?.length ? payload.items : undefined,
     }});
   };
 
+  /* eslint-disable sonarjs/cognitive-complexity */
   const createListingMultipart = async (payload: CreateRecycleListingRequest) => {
     const formData = new FormData();
-    if (payload.title) formData.append('title', payload.title);
-    if (payload.description) formData.append('description', payload.description);
-    if (payload.city || cityQuery) formData.append('city', (payload.city || cityQuery) as any);
-    if (payload.location) formData.append('location', payload.location);
+    if (payload.title) { formData.append('title', payload.title); }
+    if (payload.description) { formData.append('description', payload.description); }
+    if (payload.cityExternalId) { formData.append('cityExternalId', payload.cityExternalId); }
+    else if (payload.city || cityQuery) { formData.append('city', (payload.city || cityQuery) as any); }
+    if (payload.location) { formData.append('location', payload.location); }
+    if (payload.latitude != null) { formData.append('latitude', String(payload.latitude)); }
+    if (payload.longitude != null) { formData.append('longitude', String(payload.longitude)); }
   const toDateOnly = (d: Date) => d.toISOString().substring(0, 10);
-    if (payload.availableFrom) formData.append('availableFrom', toDateOnly(payload.availableFrom));
-    if (payload.availableTo) formData.append('availableTo', toDateOnly(payload.availableTo));
-    if (payload.pickupTimeFrom) formData.append('pickupTimeFrom', payload.pickupTimeFrom);
-    if (payload.pickupTimeTo) formData.append('pickupTimeTo', payload.pickupTimeTo);
-    if (payload.items?.length) {
-      try { formData.append('items', JSON.stringify(payload.items)); } catch {}
-    }
+    if (payload.availableFrom) { formData.append('availableFrom', toDateOnly(payload.availableFrom)); }
+    if (payload.availableTo) { formData.append('availableTo', toDateOnly(payload.availableTo)); }
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    formData.append('items', JSON.stringify(items));
     // Defensive: enforce image constraints right before upload as well
     if (images.length > MAX_IMAGES) {
       throw new Error(`Maksimalt ${MAX_IMAGES} billeder er tilladt`);
@@ -176,16 +170,18 @@ export default function CreateListingScreen() {
     if (overLimit.length > 0) {
       throw new Error('Et eller flere billeder overstiger 5 MB');
     }
-    images.forEach((img, idx) => {
+    for (let idx = 0; idx < images.length; idx++) {
+      const img = images[idx];
       if (img.file) {
         formData.append('images', img.file, img.name || `image_${idx}.jpg`);
       } else {
         formData.append('images', { uri: img.uri, name: img.name || `image_${idx}.jpg`, type: img.type } as any);
       }
-    });
+    }
     const resp = await authorizedMultipart('/listings', formData);
     if (!resp.ok) throw new Error('Upload fejlede med status ' + resp.status);
   };
+  /* eslint-enable sonarjs/cognitive-complexity */
 
   const handleRemoveImage = (id: string) => setImages(arr => arr.filter(x => x.id !== id));
 
@@ -226,7 +222,7 @@ export default function CreateListingScreen() {
         if (combined.length > MAX_IMAGES) {
           show(`Maks ${MAX_IMAGES} billeder. Overskydende blev udeladt.`, 'error');
         }
-        setImages([...combined.slice(0, MAX_IMAGES)]);
+  setImages(combined.slice(0, MAX_IMAGES));
       } else {
         // Native: respect per-file size if available and cap total count
         const appended = picked
@@ -239,7 +235,7 @@ export default function CreateListingScreen() {
         if (combined.length > MAX_IMAGES) {
           show(`Maks ${MAX_IMAGES} billeder. Overskydende blev udeladt.`, 'error');
         }
-        setImages([...combined.slice(0, MAX_IMAGES)]);
+  setImages(combined.slice(0, MAX_IMAGES));
       }
     } catch (err) {
       console.error(err);
@@ -261,9 +257,32 @@ export default function CreateListingScreen() {
     setLoading(true);
     try {
       const payload = buildPayload();
-      if (images.length === 0) await createListingJson(payload); else await createListingMultipart(payload);
-      show('Opslaget blev oprettet.', 'success');
-      router.replace('/listings');
+      // Require address and geocode before creating
+      const city = (payload.city || cityQuery || '').trim();
+      const address = (payload.location || '').trim();
+      if (!address) {
+        setErrors(prev => ({ ...prev, location: 'Adresse er påkrævet' }));
+        show('Adresse er påkrævet', 'error');
+        setLoading(false);
+        return;
+      }
+      // Prefer already selected suggestion coords if present; otherwise geocode now
+      if (!Number.isFinite(payload.latitude as number) || !Number.isFinite(payload.longitude as number)) {
+        const q = city ? `${address}, ${city}, Denmark` : `${address}, Denmark`;
+        const geo = await geocodeSearch(q);
+        if (!geo) {
+          setErrors(prev => ({ ...prev, location: 'Kunne ikke finde adressen. Tjek stavning.' }));
+          show('Kunne ikke finde adressen. Tjek stavning.', 'error');
+          setLoading(false);
+          return;
+        }
+        payload.latitude = geo.lat;
+        payload.longitude = geo.lon;
+      }
+  if (images.length === 0) await createListingJson(payload); else await createListingMultipart(payload);
+  show('Opslaget blev oprettet.', 'success');
+  // After successful creation, send Donator directly to their own listings overview
+  router.replace('/my-listings');
     } catch (e) {
       console.error(e);
       show('Kunne ikke oprette opslag.', 'error');
@@ -278,6 +297,8 @@ export default function CreateListingScreen() {
     if (!form.description?.trim()) next.description = 'Beskrivelse er påkrævet';
     const cityVal = (form.city || cityQuery || '').trim();
     if (!cityVal) next.city = 'By er påkrævet';
+    const addr = (form.location || '').trim();
+    if (!addr) next.location = 'Adresse er påkrævet';
     return next;
   };
 
@@ -294,17 +315,6 @@ export default function CreateListingScreen() {
     if (!form.availableTo) next.availableTo = 'Slutdato er påkrævet';
     if (form.availableFrom && form.availableTo && form.availableFrom > form.availableTo) {
       next.availableTo = 'Slutdato skal være samme dag eller efter startdato';
-    }
-    // pickup time window checks (time-only)
-    const timeRe = /^\d{2}:\d{2}$/;
-    if (!timeRe.test(fromTimeStr)) next.pickupTimeFrom = 'Afhentningstid fra er påkrævet (TT:MM)';
-    if (!timeRe.test(toTimeStr)) next.pickupTimeTo = 'Afhentningstid til er påkrævet (TT:MM)';
-    if (timeRe.test(fromTimeStr) && timeRe.test(toTimeStr)) {
-      const [fh, fm] = fromTimeStr.split(':').map(Number);
-      const [th, tm] = toTimeStr.split(':').map(Number);
-      const fromMins = fh * 60 + fm;
-      const toMins = th * 60 + tm;
-      if (toMins <= fromMins) next.pickupTimeTo = 'Sluttid skal være efter starttid';
     }
     return next;
   };
@@ -372,6 +382,8 @@ export default function CreateListingScreen() {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [cityQuery, citiesApi]);
 
+  // Address suggest handled by AddressTypeahead
+
   const mergeDate = (base: Date | undefined, picked: Date, part: 'date' | 'time') => {
     if (part === 'date') {
       // Force date-only (zero time)
@@ -407,20 +419,7 @@ export default function CreateListingScreen() {
     }
   };
 
-  const onTimePick = (field: 'availableFrom' | 'availableTo') => (event: DateTimePickerEvent, date?: Date) => {
-    // Repurpose for pickup time selection on native
-    if (event.type === 'dismissed') return;
-    if (!date) return;
-    const hh = pad(date.getHours());
-    const mm = pad(date.getMinutes());
-    const str = `${hh}:${mm}`;
-    if (field === 'availableFrom') setFromTimeStr(str); else setToTimeStr(str);
-    if (field === 'availableFrom' && errors.pickupTimeFrom) setErrors({ ...errors, pickupTimeFrom: '' });
-    if (field === 'availableTo' && errors.pickupTimeTo) setErrors({ ...errors, pickupTimeTo: '' });
-    if (Platform.OS !== 'ios') {
-      if (field === 'availableFrom') setShowPickupFromTimePicker(false); else setShowPickupToTimePicker(false);
-    }
-  };
+  // No pickup time selection needed
 
   const renderFromPickers = () => (
     <>
@@ -432,15 +431,7 @@ export default function CreateListingScreen() {
           onChange={onDatePick('availableFrom')}
         />
       )}
-      {showPickupFromTimePicker && (
-        <DateTimePicker
-          value={new Date()}
-          mode="time"
-          is24Hour={true}
-          display={Platform.OS === 'ios' ? 'inline' : 'default'}
-          onChange={onTimePick('availableFrom')}
-        />
-      )}
+      {/* No pickup time picker */}
     </>
   );
 
@@ -455,15 +446,7 @@ export default function CreateListingScreen() {
           onChange={onDatePick('availableTo')}
         />
       )}
-      {showPickupToTimePicker && (
-        <DateTimePicker
-          value={new Date()}
-          mode="time"
-          is24Hour={true}
-          display={Platform.OS === 'ios' ? 'inline' : 'default'}
-          onChange={onTimePick('availableTo')}
-        />
-      )}
+      {/* No pickup time picker */}
     </>
   );
 
@@ -484,8 +467,11 @@ export default function CreateListingScreen() {
     return new Date(y, m - 1, day, 0, 0, 0, 0);
   };
 
-  if (!token || user?.role !== 'Donator') {
-    return <Redirect href={!token ? '/login' : '/'} />;
+  if (!token) {
+    return <Redirect href="/login" />;
+  }
+  if (user?.role !== 'Donator') {
+    return <Redirect href="/" />;
   }
 
   return (
@@ -496,19 +482,23 @@ export default function CreateListingScreen() {
       {step === 0 && (
         <Animated.View style={{ opacity: stepAnim, transform: [{ translateX: stepAnim.interpolate({ inputRange: [0, 1], outputRange: [dir * 16, 0] }) }] }}>
           <DetailsStep
-          errors={{ title: errors.title, description: errors.description, city: errors.city }}
+          errors={{ title: errors.title, description: errors.description, city: errors.city, location: errors.location }}
           cityQuery={cityQuery}
           cityOpen={cityOpen}
           cityResults={cityResults}
           cityLoading={cityLoading}
           onTitleChange={(t) => { updateField('title', t); if (errors.title) setErrors({ ...errors, title: '' }); }}
           onDescriptionChange={(t) => { updateField('description', t); if (errors.description) setErrors({ ...errors, description: '' }); }}
-          onCityChange={(t) => { setCityQuery(t); /* open will be set after results to avoid flicker */ updateField('city', ''); if (errors.city) setErrors({ ...errors, city: '' }); }}
-          onCityFocus={() => { if (cityResults.length > 0) setCityOpen(true); }}
+          onCityChange={(t) => { setCityQuery(t); setCityExternalId(null); /* open will be set after results to avoid flicker */ updateField('city', ''); updateField('latitude', undefined as any); updateField('longitude', undefined as any); if (errors.city) setErrors({ ...errors, city: '' }); }}
+          onCityFocus={() => { if (cityResults.length > 0) { setCityOpen(true); } }}
           onCityBlur={() => { /* no-op to avoid blur-induced focus jumps */ }}
           onCityPressIn={() => { /* no-op; selection handled onPress in child */ }}
-          onCitySelect={(c) => { suppressNextSearchRef.current = true; updateField('city', c.name || ''); setCityQuery(c.name || ''); setCityOpen(false); setCityResults([]); }}
-          onLocationChange={(t) => updateField('location', t)}
+          onCitySelect={(c) => { suppressNextSearchRef.current = true; setCityExternalId(c.externalId || null); updateField('city', c.name || ''); setCityQuery(c.name || ''); setCityOpen(false); setCityResults([]); }}
+          addressQuery={addressQuery}
+          addressCityHint={(form.city || cityQuery || '').trim()}
+          onAddressChange={(t: string) => { setAddressQuery(t); updateField('location', t); updateField('latitude', undefined as any); updateField('longitude', undefined as any); if (errors.location) setErrors({ ...errors, location: '' }); }}
+          onAddressFocus={() => { setCityOpen(false); }}
+          onAddressSelect={(r) => { setAddressQuery(r.display); updateField('location', r.display); updateField('latitude', r.lat); updateField('longitude', r.lon); if (errors.location) setErrors({ ...errors, location: '' }); }}
           onBack={() => router.back()}
           onNext={() => { if (validateStep(0)) goTo(1); }}
           styles={styles as any}
@@ -539,36 +529,24 @@ export default function CreateListingScreen() {
       {step === 2 && (
         <Animated.View style={{ opacity: stepAnim, transform: [{ translateX: stepAnim.interpolate({ inputRange: [0, 1], outputRange: [dir * 16, 0] }) }] }}>
           <TimeStep
-          errors={{ availableFrom: errors.availableFrom, availableTo: errors.availableTo, pickupTimeFrom: errors.pickupTimeFrom, pickupTimeTo: errors.pickupTimeTo }}
+          errors={{ availableFrom: errors.availableFrom, availableTo: errors.availableTo }}
           formAvailableFrom={form.availableFrom}
           formAvailableTo={form.availableTo}
           datePart={datePart}
-          timePart={timePart}
           onDatePick={onDatePick}
-          onTimePick={onTimePick}
           renderFromPickers={renderFromPickers}
           renderToPickers={renderToPickers}
           fromDateStr={fromDateStr}
-          fromTimeStr={fromTimeStr}
           toDateStr={toDateStr}
-          toTimeStr={toTimeStr}
           setFromDateStr={setFromDateStr}
-          setFromTimeStr={setFromTimeStr}
           setToDateStr={setToDateStr}
-          setToTimeStr={setToTimeStr}
           parseLocal={parseLocal}
-          setWebFromOpen={setWebFromOpen}
-          setWebToOpen={setWebToOpen}
-          webFromOpen={webFromOpen}
-          webToOpen={webToOpen}
           setErrorAvailableFrom={(msg) => setErrors({ ...errors, availableFrom: msg })}
           setErrorAvailableTo={(msg) => setErrors({ ...errors, availableTo: msg })}
           setAvailableFrom={(d) => updateField('availableFrom', d)}
           setAvailableTo={(d) => updateField('availableTo', d)}
           onOpenFrom={() => { setShowFromPicker(true); }}
           onOpenTo={() => { setShowToPicker(true); }}
-          onOpenPickupFrom={() => { setShowPickupFromTimePicker(true); }}
-          onOpenPickupTo={() => { setShowPickupToTimePicker(true); }}
           shiftEndIfNeeded={shiftEndIfNeeded}
           onBack={() => goTo(1)}
           onNext={() => { if (validateStep(2)) goTo(3); }}

@@ -82,18 +82,6 @@ export interface RecycleListingResponse {
      * @type {string}
      * @memberof RecycleListingResponse
      */
-    pickupTimeFrom?: string | null;
-    /**
-     * 
-     * @type {string}
-     * @memberof RecycleListingResponse
-     */
-    pickupTimeTo?: string | null;
-    /**
-     * 
-     * @type {string}
-     * @memberof RecycleListingResponse
-     */
     createdByUserId?: string | null;
     /**
      * 
@@ -115,10 +103,10 @@ export interface RecycleListingResponse {
     status?: ListingStatus;
     /**
      * 
-     * @type {number}
+     * @type {string}
      * @memberof RecycleListingResponse
      */
-    cityId?: number;
+    cityExternalId?: string;
     /**
      * 
      * @type {string}
@@ -143,12 +131,6 @@ export interface RecycleListingResponse {
      * @memberof RecycleListingResponse
      */
     verifiedAmount?: number | null;
-    /**
-     * 
-     * @type {string}
-     * @memberof RecycleListingResponse
-     */
-    receiptImageBytes?: string | null;
     /**
      * 
      * @type {string}
@@ -206,18 +188,15 @@ export function RecycleListingResponseFromJSONTyped(json: any, ignoreDiscriminat
         'estimatedValue': json['estimatedValue'] == null ? undefined : json['estimatedValue'],
         'availableFrom': json['availableFrom'] == null ? undefined : (new Date(json['availableFrom'])),
         'availableTo': json['availableTo'] == null ? undefined : (new Date(json['availableTo'])),
-        'pickupTimeFrom': json['pickupTimeFrom'] == null ? undefined : json['pickupTimeFrom'],
-        'pickupTimeTo': json['pickupTimeTo'] == null ? undefined : json['pickupTimeTo'],
         'createdByUserId': json['createdByUserId'] == null ? undefined : json['createdByUserId'],
         'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
         'isActive': json['isActive'] == null ? undefined : json['isActive'],
         'status': json['status'] == null ? undefined : ListingStatusFromJSON(json['status']),
-        'cityId': json['cityId'] == null ? undefined : json['cityId'],
+        'cityExternalId': json['cityExternalId'] == null ? undefined : json['cityExternalId'],
         'assignedRecyclerUserId': json['assignedRecyclerUserId'] == null ? undefined : json['assignedRecyclerUserId'],
         'chatSessionId': json['chatSessionId'] == null ? undefined : json['chatSessionId'],
         'reportedAmount': json['reportedAmount'] == null ? undefined : json['reportedAmount'],
         'verifiedAmount': json['verifiedAmount'] == null ? undefined : json['verifiedAmount'],
-        'receiptImageBytes': json['receiptImageBytes'] == null ? undefined : json['receiptImageBytes'],
         'receiptImageUrl': json['receiptImageUrl'] == null ? undefined : json['receiptImageUrl'],
         'meetingPointLatitude': json['meetingPointLatitude'] == null ? undefined : json['meetingPointLatitude'],
         'meetingPointLongtitude': json['meetingPointLongtitude'] == null ? undefined : json['meetingPointLongtitude'],
@@ -243,18 +222,15 @@ export function RecycleListingResponseToJSONTyped(value?: RecycleListingResponse
         'estimatedValue': value['estimatedValue'],
         'availableFrom': value['availableFrom'] == null ? undefined : ((value['availableFrom']).toISOString().substring(0,10)),
         'availableTo': value['availableTo'] == null ? undefined : ((value['availableTo']).toISOString().substring(0,10)),
-        'pickupTimeFrom': value['pickupTimeFrom'],
-        'pickupTimeTo': value['pickupTimeTo'],
         'createdByUserId': value['createdByUserId'],
         'createdAt': value['createdAt'] == null ? undefined : ((value['createdAt']).toISOString()),
         'isActive': value['isActive'],
         'status': ListingStatusToJSON(value['status']),
-        'cityId': value['cityId'],
+        'cityExternalId': value['cityExternalId'],
         'assignedRecyclerUserId': value['assignedRecyclerUserId'],
         'chatSessionId': value['chatSessionId'],
         'reportedAmount': value['reportedAmount'],
         'verifiedAmount': value['verifiedAmount'],
-        'receiptImageBytes': value['receiptImageBytes'],
         'receiptImageUrl': value['receiptImageUrl'],
         'meetingPointLatitude': value['meetingPointLatitude'],
         'meetingPointLongtitude': value['meetingPointLongtitude'],

@@ -6,6 +6,10 @@ import PressableButton from '../../components/PressableButton';
 import { useAuth } from '../AuthContext';
 import { useToast } from '../Toast';
 import { createRecycleListingsApi } from '../services/api';
+// Using direct Photon geocoding (no shared service)
+// Reverted to direct geocoding fetch (Photon). Simple local config:
+const MIN_CHARS = 3;
+const DEBOUNCE_MS = 300;
 
 type MeetingPin = { latitude: number; longitude: number };
 
@@ -31,7 +35,7 @@ function SearchBar(props: SearchBarProps) {
       <PressableButton
         title={searching ? 'Søger…' : 'Søg'}
         onPress={onSearch}
-        disabled={!canEdit || searching || !query.trim()}
+        disabled={!canEdit || searching || query.trim().length < MIN_CHARS}
         color="#6b7280"
         iconName="magnifying-glass-location"
       />
@@ -85,6 +89,12 @@ function SuggestionsList(props: SuggestionsListProps) {
   );
 }
 
+function photonLabel(f: any): string {
+  const p = f?.properties || {};
+  const parts = [p.name, p.street, p.housenumber, p.city, p.country].filter(Boolean);
+  return parts.join(', ');
+}
+
 export default function MeetingPointScreen() {
   const { listingId, readonly } = useLocalSearchParams<{ listingId: string; readonly?: string }>();
   const idNum = Number(listingId);
@@ -97,6 +107,7 @@ export default function MeetingPointScreen() {
   const [saving, setSaving] = useState(false);
   const [pin, setPin] = useState<MeetingPin | null>(null);
   const [suggestions, setSuggestions] = useState<Array<{ display: string; lat: number; lon: number }>>([]);
+  const [suggestionsEnabled, setSuggestionsEnabled] = useState(true);
   const [region, setRegion] = useState<Region>({ latitude: 55.6761, longitude: 12.5683, latitudeDelta: 0.05, longitudeDelta: 0.05 });
   const mapRef = useRef<MapView | null>(null);
   const [mapReady, setMapReady] = useState(false);
@@ -133,28 +144,43 @@ export default function MeetingPointScreen() {
       try { mv.fitToCoordinates([{ latitude: pin.latitude, longitude: pin.longitude }], { edgePadding: { top: 64, right: 64, bottom: 64, left: 64 }, animated: true }); } catch {}
       try { mv.setCamera({ center: { latitude: pin.latitude, longitude: pin.longitude }, zoom: 15 }); } catch {}
     };
-    if (mapReady) animate(); else pendingCenterRef.current = pin;
+    if (mapReady) {
+      animate();
+    } else {
+      pendingCenterRef.current = pin;
+    }
   }, [pin?.latitude, pin?.longitude, mapReady]);
 
   const canEdit = user?.role === 'Donator' && readonly !== '1';
 
+  const handleChangeQuery = useCallback((t: string) => {
+    setSuggestionsEnabled(true);
+    setQuery(t);
+  }, []);
+
   const searchPlace = async () => {
     const q = query.trim();
-    if (!q || !canEdit) return;
+      if (!q || q.length < MIN_CHARS || !canEdit) return;
     try {
       setSearching(true);
-      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=dk&q=${encodeURIComponent(q)}`;
-      const res = await fetch(url, { headers: { 'Accept': 'application/json', 'User-Agent': 'PantmigNative/1.0 (native)' } });
-      const arr = await res.json();
-      if (Array.isArray(arr) && arr[0]) {
-        const lat = parseFloat(arr[0].lat);
-        const lon = parseFloat(arr[0].lon);
-        if (isFinite(lat) && isFinite(lon)) {
-          setPin({ latitude: lat, longitude: lon });
+    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=1&lang=en`;
+        const res = await fetch(url, { headers: { Accept: 'application/json' } });
+        const json = await res.json();
+        const feat = json?.features?.[0];
+        const coords = feat?.geometry?.coordinates;
+        if (Array.isArray(coords)) {
+          const [lon, lat] = coords as [number, number];
+          if (Number.isFinite(lat) && Number.isFinite(lon)) {
+            setPin({ latitude: lat, longitude: lon });
+            // Close and suppress suggestions until the user types again
+            setSuggestions([]);
+            setSuggestionsEnabled(false);
+          } else {
+            show('Ingen resultater', 'error');
+          }
+        } else {
+          show('Ingen resultater', 'error');
         }
-      } else {
-        show('Ingen resultater', 'error');
-      }
     } catch (e) {
       console.error(e);
       show('Søgning fejlede', 'error');
@@ -165,26 +191,31 @@ export default function MeetingPointScreen() {
 
   useEffect(() => {
     if (!canEdit) { setSuggestions([]); return; }
+    if (!suggestionsEnabled) { setSuggestions([]); return; }
     const q = query.trim();
-    const h = setTimeout(async () => {
-      if (q.length < 3) { setSuggestions([]); return; }
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=dk&q=${encodeURIComponent(q)}`;
-        const res = await fetch(url, { headers: { 'Accept': 'application/json', 'User-Agent': 'PantmigNative/1.0 (native)' } });
-        const arr = await res.json();
-        if (Array.isArray(arr)) {
-          const mapped = arr.map((r: any) => ({ display: r.display_name as string, lat: parseFloat(r.lat), lon: parseFloat(r.lon) }))
-            .filter((x: any) => isFinite(x.lat) && isFinite(x.lon));
+      const h = setTimeout(async () => {
+        if (q.length < MIN_CHARS) { setSuggestions([]); return; }
+        try {
+    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=5&lang=en`;
+          const res = await fetch(url, { headers: { Accept: 'application/json' } });
+          const json = await res.json();
+          const feats = Array.isArray(json?.features) ? json.features : [];
+          const mapped = feats
+            .map((f: any) => {
+              const coords = f?.geometry?.coordinates;
+              const [lon, lat] = Array.isArray(coords) ? (coords as [number, number]) : [Number.NaN, Number.NaN];
+              return { display: photonLabel(f), lat, lon };
+            })
+            .filter((x: any) => Number.isFinite(x.lat) && Number.isFinite(x.lon));
           setSuggestions(mapped);
-        } else {
+        } catch {
           setSuggestions([]);
         }
-      } catch {
-        setSuggestions([]);
-      }
-    }, 300);
+      }, DEBOUNCE_MS);
     return () => clearTimeout(h);
-  }, [query, canEdit]);
+  }, [query, canEdit, suggestionsEnabled]);
+
+  
 
   const save = async () => {
     if (!pin) return;
@@ -214,13 +245,14 @@ export default function MeetingPointScreen() {
         </View>
       ) : (
         <View style={{ flex: 1 }}>
-          <SearchBar query={query} setQuery={setQuery} onSearch={searchPlace} searching={searching} canEdit={canEdit} />
+          <SearchBar query={query} setQuery={handleChangeQuery} onSearch={searchPlace} searching={searching} canEdit={canEdit} />
           <SuggestionsList
             suggestions={suggestions}
             canEdit={canEdit}
             onPick={(lat, lon, display) => {
               setQuery(display);
               setSuggestions([]);
+              setSuggestionsEnabled(false);
               setPin({ latitude: lat, longitude: lon });
             }}
           />

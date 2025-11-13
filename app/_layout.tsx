@@ -1,13 +1,18 @@
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { Stack } from "expo-router";
 import { Platform, Pressable, Text, View } from "react-native";
-import { AuthProvider } from "./AuthContext";
+import { AuthProvider, useAuth } from "./AuthContext";
+import { NotificationsProvider } from './NotificationsProvider';
 import { ToastProvider } from "./Toast";
+import { useNotifications } from './services/notificationsStore';
 
 
 const MAX_WIDTH = 900;
 
 function WebHeader({ navigation, options, back }: any) {
+  const { unreadCount } = useNotifications();
+  const { token } = useAuth();
   const title = options?.title ?? '';
   // React Navigation sometimes omits the `back` prop on web even when a previous
   // entry exists in history (e.g. after full reload). Fallback to canGoBack().
@@ -39,7 +44,31 @@ function WebHeader({ navigation, options, back }: any) {
             {title}
           </Text>
         </View>
-        <View style={{ width: 64 }} />
+        <View style={{ width: 64, justifyContent: 'center', alignItems: 'flex-end' }}>
+          {token ? (
+            <Pressable onPress={() => navigation?.navigate?.('notifications')} style={{ paddingVertical: 8, paddingHorizontal: 8, position: 'relative' }}>
+              <FontAwesome6 name="bell" size={18} color="black" />
+              {unreadCount > 0 ? (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: 4,
+                    right: 4,
+                    backgroundColor: '#ef4444',
+                    borderRadius: 9999,
+                    minWidth: 16,
+                    height: 16,
+                    paddingHorizontal: 3,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text style={{ color: 'white', fontSize: 10, fontWeight: '700' }}>{unreadCount}</Text>
+                </View>
+              ) : null}
+            </Pressable>
+          ) : null}
+        </View>
       </View>
     </View>
   );
@@ -47,12 +76,47 @@ function WebHeader({ navigation, options, back }: any) {
 
 const renderWebHeader = (props: any) => <WebHeader {...props} />;
 
+function HeaderBell() {
+  const nav = useNavigation<any>();
+  const route = useRoute();
+  const { token } = useAuth();
+  const { unreadCount } = useNotifications();
+  // Hide on web (custom header already shows bell), and hide on auth screens
+  if (Platform.OS === 'web') return null;
+  const name = (route as any)?.name as string | undefined;
+  if (!token || name === 'login' || name === 'register') return null;
+  return (
+    <Pressable onPress={() => nav.navigate('notifications')} style={{ paddingVertical: 6, paddingHorizontal: 12, position: 'relative' }}>
+      <FontAwesome6 name="bell" size={18} color="black" />
+      {unreadCount > 0 ? (
+        <View
+          style={{
+            position: 'absolute',
+            top: 2,
+            right: 6,
+            backgroundColor: '#ef4444',
+            borderRadius: 9999,
+            minWidth: 14,
+            height: 14,
+            paddingHorizontal: 3,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text style={{ color: 'white', fontSize: 9, fontWeight: '700' }}>{unreadCount}</Text>
+        </View>
+      ) : null}
+    </Pressable>
+  );
+}
+
 export default function RootLayout() {
   // We'll provide a subtle elevated card look only on web.
   const webWrapperEnabled = Platform.OS === 'web';
   return (
     <ToastProvider>
       <AuthProvider>
+        <NotificationsProvider>
         <View
           style={webWrapperEnabled ? {
             flex: 1,
@@ -74,7 +138,7 @@ export default function RootLayout() {
             } : { flex: 1 }}
           >
             <Stack
-              screenOptions={{
+              screenOptions={({ route }) => ({
                 contentStyle: Platform.select({
                   web: { width: '100%', maxWidth: '100%', alignSelf: 'center', backgroundColor: 'transparent' },
                   default: undefined,
@@ -83,9 +147,8 @@ export default function RootLayout() {
                   web: renderWebHeader,
                   default: undefined,
                 }) as any,
-                // Add some interior padding for body content across all screens (web only, keep native unchanged)
-                // We'll rely on individual screens for their own padding currently; leaving this commented for potential future use.
-              }}
+                headerRight: () => <HeaderBell />,
+              })}
             >
               <Stack.Screen name="index" options={{ title: 'Forside' }} />
               {/* Backward direction (e.g., after logout) */}
@@ -102,9 +165,13 @@ export default function RootLayout() {
               <Stack.Screen name="meeting-point/[listingId]" options={{ title: 'Mødested', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
               {/* If present, also treat receipt upload as forward */}
               <Stack.Screen name="receipt-upload/[listingId]" options={{ title: 'Kvittering', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
+              <Stack.Screen name="notifications" options={{ title: 'Notifikationer', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
+              {/* Map screen */}
+              <Stack.Screen name="listings-map" options={{ title: 'Kort over opslag', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
             </Stack>
           </View>
         </View>
+        </NotificationsProvider>
       </AuthProvider>
     </ToastProvider>
   );

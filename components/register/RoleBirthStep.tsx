@@ -1,6 +1,7 @@
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import React, { memo } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
+import type { Gender } from '../../app/apis/pantmig-auth/models/Gender';
 import PressableButton from '../PressableButton';
 
 type Styles = {
@@ -18,10 +19,10 @@ type Styles = {
 
 type Props = Readonly<{
   userTypeLabel: string;
-  gender: number;
+  gender: Gender;
   onSelectRoleDonor: () => void;
   onSelectRoleRecycler: () => void;
-  onSelectGender: (g: number) => void;
+  onSelectGender: (g: Gender) => void;
   birthDate: Date | null;
   setShowBirthPicker: (v: boolean) => void;
   showBirthPicker: boolean;
@@ -34,7 +35,7 @@ type Props = Readonly<{
   onSubmit: () => void;
 }>;
 
-const GenderButtons = memo(({ gender, onSelectGender, styles }: { gender: number; onSelectGender: (g: number) => void; styles: any }) => (
+const GenderButtons = memo(({ gender, onSelectGender, styles }: { gender: Gender; onSelectGender: (g: Gender) => void; styles: any }) => (
   <View style={styles.segmentedRow}>
     <PressableButton title={`${gender===0?'✓ ':''}Ønsker ikke at oplyse`} onPress={() => onSelectGender(0)} color={gender===0 ? '#2563eb' : '#4b4d50ff'} iconName="ban" />
     <PressableButton title={`${gender===1?'✓ ':''}Mand`} onPress={() => onSelectGender(1)} color={gender===1 ? '#2563eb' : '#4b4d50ff'} iconName="person" />

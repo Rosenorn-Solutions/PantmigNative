@@ -8,10 +8,13 @@ import PersonalStep from '../components/register/PersonalStep';
 import RoleBirthStep from '../components/register/RoleBirthStep';
 import { CitiesApi } from './apis/pantmig-api/apis';
 import type { CitySearchResult } from './apis/pantmig-api/models/CitySearchResult';
+import type { Gender } from './apis/pantmig-auth/models/Gender';
 import { UserType } from './apis/pantmig-auth/models/UserType';
 import { useAuth } from './AuthContext';
 import { authApi, pantmigApiConfig } from './services/api';
+import { isEmailTaken, isPhoneTaken } from './services/validators';
 import { useToast } from './Toast';
+import { buildCityFields } from './utils/cityFields';
 import { formStyles } from './utils/formStyles';
 
 // NOTE: Do not create a new AuthApi() here; it would ignore configured basePath/middleware.
@@ -33,6 +36,7 @@ export default function RegisterScreen() {
   const [phone, setPhone] = useState('');
 
   const [city, setCity] = useState('');
+  const [cityExternalId, setCityExternalId] = useState<string | null>(null);
   const [cityQuery, setCityQuery] = useState('');
   const [cityResults, setCityResults] = useState<CitySearchResult[]>([]);
   const [cityOpen, setCityOpen] = useState(false);
@@ -42,7 +46,7 @@ export default function RegisterScreen() {
   const suppressNextSearchRef = useRef(false);
 
   const [userType, setUserType] = useState<UserType>(UserType.NUMBER_0); // default Donor
-  const [gender, setGender] = useState<number>(0);
+  const [gender, setGender] = useState<Gender>(0 as Gender);
   const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [showBirthPicker, setShowBirthPicker] = useState(false);
   const [birthDateStr, setBirthDateStr] = useState(''); // web input holds YYYY-MM-DD
@@ -113,11 +117,12 @@ export default function RegisterScreen() {
   const getRoleBirthErrors = () => {
     const next: Record<string, string> = {};
     if (gender == null || gender < 0) next.gender = 'Køn er påkrævet';
-    if (!birthDate) next.birthDate = 'Fødselsdato er påkrævet';
-    else {
+    if (birthDate) {
       const now = new Date();
       const thirteenYearsMs = 13 * 365.25 * 24 * 60 * 60 * 1000;
       if (now.getTime() - birthDate.getTime() < thirteenYearsMs) next.birthDate = 'Minimumsalder er 13 år';
+    } else {
+      next.birthDate = 'Fødselsdato er påkrævet';
     }
     return next;
   };
@@ -139,8 +144,20 @@ export default function RegisterScreen() {
     }
     setLoading(true);
     try {
+      // Final preflight uniqueness checks
+      if (await isEmailTaken(email)) {
+        setErrors(prev => ({ ...prev, email: 'Email er allerede i brug' }));
+        show('Email er allerede i brug', 'error');
+        return;
+      }
+      if (await isPhoneTaken(phone)) {
+        setErrors(prev => ({ ...prev, phone: 'Telefonnummer er allerede i brug' }));
+        show('Telefonnummer er allerede i brug', 'error');
+        return;
+      }
       const birthDateToSend = birthDate ? new Date(Date.UTC(birthDate.getFullYear(), birthDate.getMonth(), birthDate.getDate())) : undefined;
-      const res = await authApi.authRegister({ registerRequest: { email, password, firstName, lastName, phone, userType, city: city || cityQuery, gender: gender as any, birthDate: birthDateToSend } });
+      const cityFields = buildCityFields(cityExternalId, city, cityQuery);
+      const res = await authApi.authRegister({ registerRequest: { email, password, firstName, lastName, phone, userType, gender, birthDate: birthDateToSend, ...cityFields } });
       if (res?.authResponse?.accessToken) {
         await setAuthFromResponse(res.authResponse);
         show('Din konto er oprettet!', 'success');
@@ -186,7 +203,6 @@ export default function RegisterScreen() {
   const valueStr = birthDate ? fmt(birthDate) : (birthDateStr || '');
   const webDateInput = (
     <View>
-      <label htmlFor="birthDate" className="pmg-date-label">Fødselsdato</label>
       <input
         id="birthDate"
         type="date"
@@ -199,9 +215,16 @@ export default function RegisterScreen() {
           if (v) {
             const [y, m, d] = v.split('-').map(Number);
             const nd = new Date(y, (m || 1) - 1, d || 1);
-            if (!isNaN(nd.getTime())) { setBirthDate(nd); if (errors.birthDate) setErrors({ ...errors, birthDate: '' }); }
-            else { setBirthDate(null); }
-          } else { setBirthDate(null); }
+            const valid = !Number.isNaN(nd.getTime());
+            if (valid) {
+              setBirthDate(nd);
+              if (errors.birthDate) setErrors({ ...errors, birthDate: '' });
+            } else {
+              setBirthDate(null);
+            }
+          } else {
+            setBirthDate(null);
+          }
         }}
         placeholder="Vælg fødselsdato"
         aria-label="Fødselsdato"
@@ -228,7 +251,15 @@ export default function RegisterScreen() {
           onEmailChange={(v) => { setEmail(v); if (errors.email) setErrors({ ...errors, email: '' }); }}
           onPasswordChange={(v) => { setPassword(v); if (errors.password) setErrors({ ...errors, password: '' }); }}
           onBack={() => router.back()}
-          onNext={() => { if (validateStep(0)) goTo(1); }}
+          onNext={async () => {
+            if (!validateStep(0)) return;
+            if (await isEmailTaken(email)) {
+              setErrors(prev => ({ ...prev, email: 'Email er allerede i brug' }));
+              show('Email er allerede i brug', 'error');
+              return;
+            }
+            goTo(1);
+          }}
           styles={styles as any}
           />
         </Animated.View>
@@ -244,9 +275,17 @@ export default function RegisterScreen() {
           errorLastName={errors.lastName}
           onFirstNameChange={(v) => { setFirstName(v); if (errors.firstName) setErrors({ ...errors, firstName: '' }); }}
           onLastNameChange={(v) => { setLastName(v); if (errors.lastName) setErrors({ ...errors, lastName: '' }); }}
-          onPhoneChange={setPhone}
+          onPhoneChange={(v) => { setPhone(v); if (errors.phone) setErrors({ ...errors, phone: '' }); }}
           onBack={() => goTo(0)}
-          onNext={() => { if (validateStep(1)) goTo(2); }}
+          onNext={async () => {
+            if (!validateStep(1)) return;
+            if (await isPhoneTaken(phone)) {
+              setErrors(prev => ({ ...prev, phone: 'Telefonnummer er allerede i brug' }));
+              show('Telefonnummer er allerede i brug', 'error');
+              return;
+            }
+            goTo(2);
+          }}
           styles={styles as any}
           />
         </Animated.View>
@@ -271,7 +310,7 @@ export default function RegisterScreen() {
           onCityFocus={() => { if (cityResults.length > 0) setCityOpen(true); }}
           onCityBlur={() => { /* no-op to avoid blur-induced focus jumps */ }}
           onCityPressIn={() => { /* no-op; selection handled onPress in child */ }}
-          onCitySelect={(c) => { suppressNextSearchRef.current = true; setCity(c.name || ''); setCityQuery(c.name || ''); setCityOpen(false); setCityResults([]); }}
+          onCitySelect={(c) => { suppressNextSearchRef.current = true; setCity(c.name || ''); setCityExternalId(c.externalId || null); setCityQuery(c.name || ''); setCityOpen(false); setCityResults([]); }}
           onBack={() => goTo(1)}
           onNext={() => { if (validateStep(2)) goTo(3); }}
           styles={styles as any}
