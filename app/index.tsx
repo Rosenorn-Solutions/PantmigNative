@@ -89,7 +89,8 @@ export default function Index() {
           <Text style={styles.hello}>Hej {user?.firstName}</Text>
         </View>
         <View style={{ marginTop: 4, justifyContent: 'center', alignItems: 'center' }}>
-          <Text style={styles.subtitle}>Gør en forskel ved at forbinde donorer og indsamlere. Kom hurtigt i gang nedenfor.</Text>
+          <Text style={[styles.subtitle, { textAlign: 'center', fontWeight: '600' }]}>Tak for at være med til at vi alle får pantet mere ❤️</Text>
+          <Text style={[styles.subtitle, { textAlign: 'center', marginTop: 4 }]}>Kom hurtigt i gang nedenfor.</Text>
         </View>
       </View>
 
@@ -112,6 +113,8 @@ export default function Index() {
               <PressableButton title="Mine opslag" onPress={() => router.push("./my-listings")} color="#6b7280" iconName="folder-open" style={styles.button} />
             </>
           )}
+          {/* Place settings just above logout to be second-lowest */}
+          <PressableButton title="Brugerindstillinger" onPress={() => router.push('./settings')} color="#374151" iconName="gear" style={styles.button} />
         </View>
         <PressableButton title="Log ud" color="#dc2626" onPress={async () => { await logout(); show('Du er nu logget ud', 'success'); }} iconName="arrow-right-from-bracket" style={{ ...styles.button, marginTop: 8 }} />
         </View>

@@ -254,8 +254,11 @@ export default function ListingsMapWebScreen() {
         handleUnsupported(notifyOnError);
         return;
       }
+
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: false, maximumAge: 60_000, timeout: 15_000 });
+        navigator.geolocation.getCurrentPosition(resolve, (err: any) => {
+          reject(new Error(err?.message || 'geolocation error'));
+        }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 });
       });
       if (!isMountedRef.current) return;
       setLocationStatus('granted');

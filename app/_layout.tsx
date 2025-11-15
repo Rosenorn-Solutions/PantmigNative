@@ -16,7 +16,8 @@ function WebHeader({ navigation, options, back }: any) {
   const title = options?.title ?? '';
   // React Navigation sometimes omits the `back` prop on web even when a previous
   // entry exists in history (e.g. after full reload). Fallback to canGoBack().
-  const canGoBack = back || navigation?.canGoBack?.();
+  const backAllowedByOptions = options?.headerBackVisible !== false;
+  const canGoBack = backAllowedByOptions && (back || navigation?.canGoBack?.());
   return (
     <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee', justifyContent: 'center' }}>
       <View
@@ -150,9 +151,9 @@ export default function RootLayout() {
                 headerRight: () => <HeaderBell />,
               })}
             >
-              <Stack.Screen name="index" options={{ title: 'Forside' }} />
+              <Stack.Screen name="index" options={{ title: 'Forside', headerBackVisible: false }} />
               {/* Backward direction (e.g., after logout) */}
-              <Stack.Screen name="login" options={{ title: 'Log ind', animation: Platform.OS === 'web' ? undefined : 'slide_from_left', animationTypeForReplace: Platform.OS === 'web' ? undefined as any : 'pop' }} />
+              <Stack.Screen name="login" options={{ title: 'Log ind', headerBackVisible: false, animation: Platform.OS === 'web' ? undefined : 'slide_from_left', animationTypeForReplace: Platform.OS === 'web' ? undefined as any : 'pop' }} />
 
               {/* Forward flows slide from right */}
               <Stack.Screen name="register" options={{ title: 'Opret konto', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
@@ -166,6 +167,7 @@ export default function RootLayout() {
               {/* If present, also treat receipt upload as forward */}
               <Stack.Screen name="receipt-upload/[listingId]" options={{ title: 'Kvittering', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
               <Stack.Screen name="notifications" options={{ title: 'Notifikationer', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
+              <Stack.Screen name="settings" options={{ title: 'Indstillinger', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
               {/* Map screen */}
               <Stack.Screen name="listings-map" options={{ title: 'Kort over opslag', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
             </Stack>

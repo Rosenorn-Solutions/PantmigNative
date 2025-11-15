@@ -16,6 +16,8 @@ import { isEmailTaken, isPhoneTaken } from './services/validators';
 import { useToast } from './Toast';
 import { buildCityFields } from './utils/cityFields';
 import { formStyles } from './utils/formStyles';
+import { formatPhoneDKLocalDisplay, normalizePhoneDK } from './utils/phone';
+import { isValidEmail } from './utils/validators';
 
 // NOTE: Do not create a new AuthApi() here; it would ignore configured basePath/middleware.
 
@@ -99,7 +101,7 @@ export default function RegisterScreen() {
     const next: Record<string, string> = {};
     const emailTrim = email.trim();
     if (!emailTrim) next.email = 'Email er påkrævet';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) next.email = 'Ugyldig email';
+    else if (!isValidEmail(emailTrim)) next.email = 'Ugyldig email';
     if (!password || password.length < 6) next.password = 'Adgangskode skal være mindst 6 tegn';
     return next;
   };
@@ -107,6 +109,9 @@ export default function RegisterScreen() {
     const next: Record<string, string> = {};
     if (!firstName.trim()) next.firstName = 'Fornavn er påkrævet';
     if (!lastName.trim()) next.lastName = 'Efternavn er påkrævet';
+    if (phone && phone.replaceAll(/\D/g, '').length > 0 && phone.replaceAll(/\D/g, '').length < 8) {
+      next.phone = 'Telefonnummer skal være 8 cifre';
+    }
     return next;
   };
   const getCityErrors = () => {
@@ -157,7 +162,8 @@ export default function RegisterScreen() {
       }
       const birthDateToSend = birthDate ? new Date(Date.UTC(birthDate.getFullYear(), birthDate.getMonth(), birthDate.getDate())) : undefined;
       const cityFields = buildCityFields(cityExternalId, city, cityQuery);
-      const res = await authApi.authRegister({ registerRequest: { email, password, firstName, lastName, phone, userType, gender, birthDate: birthDateToSend, ...cityFields } });
+      const phoneNormalized = normalizePhoneDK(phone);
+      const res = await authApi.authRegister({ registerRequest: { email, password, firstName, lastName, phone: phoneNormalized || undefined, userType, gender, birthDate: birthDateToSend, ...cityFields } });
       if (res?.authResponse?.accessToken) {
         await setAuthFromResponse(res.authResponse);
         show('Din konto er oprettet!', 'success');
@@ -273,9 +279,10 @@ export default function RegisterScreen() {
           phone={phone}
           errorFirstName={errors.firstName}
           errorLastName={errors.lastName}
+          errorPhone={errors.phone}
           onFirstNameChange={(v) => { setFirstName(v); if (errors.firstName) setErrors({ ...errors, firstName: '' }); }}
           onLastNameChange={(v) => { setLastName(v); if (errors.lastName) setErrors({ ...errors, lastName: '' }); }}
-          onPhoneChange={(v) => { setPhone(v); if (errors.phone) setErrors({ ...errors, phone: '' }); }}
+          onPhoneChange={(v) => { setPhone(formatPhoneDKLocalDisplay(v)); if (errors.phone) setErrors({ ...errors, phone: '' }); }}
           onBack={() => goTo(0)}
           onNext={async () => {
             if (!validateStep(1)) return;

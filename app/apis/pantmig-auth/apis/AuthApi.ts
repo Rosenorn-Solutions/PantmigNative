@@ -17,8 +17,14 @@ import * as runtime from '../runtime';
 import type {
   AuthResponse,
   AvailabilityResult,
+  ChangeEmailRequest,
+  ChangeEmailResult,
+  ChangePasswordRequest,
+  ChangePasswordResult,
+  DisableAccountRequest,
   LoginRequest,
   LoginResult,
+  OperationResult,
   RegisterRequest,
   RegisterResult,
   TokenRefreshRequest,
@@ -32,10 +38,22 @@ import {
     AuthResponseToJSON,
     AvailabilityResultFromJSON,
     AvailabilityResultToJSON,
+    ChangeEmailRequestFromJSON,
+    ChangeEmailRequestToJSON,
+    ChangeEmailResultFromJSON,
+    ChangeEmailResultToJSON,
+    ChangePasswordRequestFromJSON,
+    ChangePasswordRequestToJSON,
+    ChangePasswordResultFromJSON,
+    ChangePasswordResultToJSON,
+    DisableAccountRequestFromJSON,
+    DisableAccountRequestToJSON,
     LoginRequestFromJSON,
     LoginRequestToJSON,
     LoginResultFromJSON,
     LoginResultToJSON,
+    OperationResultFromJSON,
+    OperationResultToJSON,
     RegisterRequestFromJSON,
     RegisterRequestToJSON,
     RegisterResultFromJSON,
@@ -52,6 +70,14 @@ import {
     UsersLookupResultToJSON,
 } from '../models/index';
 
+export interface AuthChangeEmailRequest {
+    changeEmailRequest: ChangeEmailRequest;
+}
+
+export interface AuthChangePasswordRequest {
+    changePasswordRequest: ChangePasswordRequest;
+}
+
 export interface AuthCheckEmailRequest {
     email: string;
 }
@@ -63,6 +89,16 @@ export interface AuthCheckPhoneRequest {
 export interface AuthConfirmEmailRequest {
     userId: string;
     token: string;
+}
+
+export interface AuthConfirmEmailChangeRequest {
+    userId: string;
+    email: string;
+    token: string;
+}
+
+export interface AuthDisableAccountRequest {
+    disableAccountRequest: DisableAccountRequest;
 }
 
 export interface AuthGetUserByIdRequest {
@@ -89,6 +125,96 @@ export interface AuthUsersLookupRequest {
  * 
  */
 export class AuthApi extends runtime.BaseAPI {
+
+    /**
+     * Initiates email change by sending a confirmation link to the new address.
+     * Request email change
+     */
+    async authChangeEmailRaw(requestParameters: AuthChangeEmailRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ChangeEmailResult>> {
+        if (requestParameters['changeEmailRequest'] == null) {
+            throw new runtime.RequiredError(
+                'changeEmailRequest',
+                'Required parameter "changeEmailRequest" was null or undefined when calling authChangeEmail().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["Authorization"] = await this.configuration.apiKey("Authorization"); // Bearer authentication
+        }
+
+
+        let urlPath = `/auth/change-email`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: ChangeEmailRequestToJSON(requestParameters['changeEmailRequest']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => ChangeEmailResultFromJSON(jsonValue));
+    }
+
+    /**
+     * Initiates email change by sending a confirmation link to the new address.
+     * Request email change
+     */
+    async authChangeEmail(requestParameters: AuthChangeEmailRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ChangeEmailResult> {
+        const response = await this.authChangeEmailRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Changes the authenticated user\'s password and rotates tokens.
+     * Change password
+     */
+    async authChangePasswordRaw(requestParameters: AuthChangePasswordRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ChangePasswordResult>> {
+        if (requestParameters['changePasswordRequest'] == null) {
+            throw new runtime.RequiredError(
+                'changePasswordRequest',
+                'Required parameter "changePasswordRequest" was null or undefined when calling authChangePassword().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["Authorization"] = await this.configuration.apiKey("Authorization"); // Bearer authentication
+        }
+
+
+        let urlPath = `/auth/change-password`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: ChangePasswordRequestToJSON(requestParameters['changePasswordRequest']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => ChangePasswordResultFromJSON(jsonValue));
+    }
+
+    /**
+     * Changes the authenticated user\'s password and rotates tokens.
+     * Change password
+     */
+    async authChangePassword(requestParameters: AuthChangePasswordRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ChangePasswordResult> {
+        const response = await this.authChangePasswordRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * Returns whether a user with the provided email already exists.
@@ -236,6 +362,118 @@ export class AuthApi extends runtime.BaseAPI {
      */
     async authConfirmEmail(requestParameters: AuthConfirmEmailRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.authConfirmEmailRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Finalizes email change using token sent to new address.
+     * Confirm email change
+     */
+    async authConfirmEmailChangeRaw(requestParameters: AuthConfirmEmailChangeRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['userId'] == null) {
+            throw new runtime.RequiredError(
+                'userId',
+                'Required parameter "userId" was null or undefined when calling authConfirmEmailChange().'
+            );
+        }
+
+        if (requestParameters['email'] == null) {
+            throw new runtime.RequiredError(
+                'email',
+                'Required parameter "email" was null or undefined when calling authConfirmEmailChange().'
+            );
+        }
+
+        if (requestParameters['token'] == null) {
+            throw new runtime.RequiredError(
+                'token',
+                'Required parameter "token" was null or undefined when calling authConfirmEmailChange().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['userId'] != null) {
+            queryParameters['userId'] = requestParameters['userId'];
+        }
+
+        if (requestParameters['email'] != null) {
+            queryParameters['email'] = requestParameters['email'];
+        }
+
+        if (requestParameters['token'] != null) {
+            queryParameters['token'] = requestParameters['token'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["Authorization"] = await this.configuration.apiKey("Authorization"); // Bearer authentication
+        }
+
+
+        let urlPath = `/auth/confirm-email-change`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Finalizes email change using token sent to new address.
+     * Confirm email change
+     */
+    async authConfirmEmailChange(requestParameters: AuthConfirmEmailChangeRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.authConfirmEmailChangeRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Marks the authenticated user\'s account as disabled and revokes active tokens.
+     * Disable account
+     */
+    async authDisableAccountRaw(requestParameters: AuthDisableAccountRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<OperationResult>> {
+        if (requestParameters['disableAccountRequest'] == null) {
+            throw new runtime.RequiredError(
+                'disableAccountRequest',
+                'Required parameter "disableAccountRequest" was null or undefined when calling authDisableAccount().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["Authorization"] = await this.configuration.apiKey("Authorization"); // Bearer authentication
+        }
+
+
+        let urlPath = `/auth/disable-account`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: DisableAccountRequestToJSON(requestParameters['disableAccountRequest']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => OperationResultFromJSON(jsonValue));
+    }
+
+    /**
+     * Marks the authenticated user\'s account as disabled and revokes active tokens.
+     * Disable account
+     */
+    async authDisableAccount(requestParameters: AuthDisableAccountRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<OperationResult> {
+        const response = await this.authDisableAccountRaw(requestParameters, initOverrides);
+        return await response.value();
     }
 
     /**

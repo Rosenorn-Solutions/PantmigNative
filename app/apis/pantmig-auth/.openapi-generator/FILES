@@ -3,9 +3,15 @@ apis/index.ts
 index.ts
 models/AuthResponse.ts
 models/AvailabilityResult.ts
+models/ChangeEmailRequest.ts
+models/ChangeEmailResult.ts
+models/ChangePasswordRequest.ts
+models/ChangePasswordResult.ts
+models/DisableAccountRequest.ts
 models/Gender.ts
 models/LoginRequest.ts
 models/LoginResult.ts
+models/OperationResult.ts
 models/RegisterRequest.ts
 models/RegisterResult.ts
 models/TokenRefreshRequest.ts

@@ -105,6 +105,8 @@ export default function LoginScreen() {
       setLoading(false);
     }
   };
+  const emailRef = useRef<TextInput | null>(null);
+  const passwordRef = useRef<TextInput | null>(null);
 
   const toggleReduceMotion = async () => {
     const next = !reduceMotion;
@@ -142,21 +144,27 @@ export default function LoginScreen() {
       <Animated.View style={{ opacity: fadeEmail, transform: [{ translateY: transEmail }] }}>
         <Text style={styles.webPickerLabel}>Email</Text>
         <TextInput
+          ref={emailRef}
           style={styles.input}
           placeholder="Email eller brugernavn"
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
+          returnKeyType="next"
+          onSubmitEditing={() => passwordRef.current?.focus()}
         />
       </Animated.View>
       <Animated.View style={{ opacity: fadePassword, transform: [{ translateY: transPassword }] }}>
         <Text style={styles.webPickerLabel}>Adgangskode</Text>
         <TextInput
+          ref={passwordRef}
           style={styles.input}
           placeholder="Adgangskode"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
+          returnKeyType="go"
+          onSubmitEditing={() => { if (!loading) handleLogin(); }}
         />
       </Animated.View>
       <Animated.View style={{ opacity: fadeLoginBtn, transform: [{ translateY: transLoginBtn }] }}>
