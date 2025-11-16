@@ -1,3 +1,4 @@
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { Redirect, useRouter } from "expo-router";
 import React from 'react';
 import { ActivityIndicator, Image, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -89,7 +90,10 @@ export default function Index() {
           <Text style={styles.hello}>Hej {user?.firstName}</Text>
         </View>
         <View style={{ marginTop: 4, justifyContent: 'center', alignItems: 'center' }}>
-          <Text style={[styles.subtitle, { textAlign: 'center', fontWeight: '600' }]}>Tak for at være med til at vi alle får pantet mere ❤️</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <Text style={[styles.subtitle, { textAlign: 'center', fontWeight: '600' }]}>Tak for at være med til at vi alle får pantet mere</Text>
+            <FontAwesome6 name="heart" size={14} color="#ef4444" solid />
+          </View>
           <Text style={[styles.subtitle, { textAlign: 'center', marginTop: 4 }]}>Kom hurtigt i gang nedenfor.</Text>
         </View>
       </View>
@@ -113,8 +117,7 @@ export default function Index() {
               <PressableButton title="Mine opslag" onPress={() => router.push("./my-listings")} color="#6b7280" iconName="folder-open" style={styles.button} />
             </>
           )}
-          {/* Place settings just above logout to be second-lowest */}
-          <PressableButton title="Brugerindstillinger" onPress={() => router.push('./settings')} color="#374151" iconName="gear" style={styles.button} />
+          {/* Settings moved under Profile (header user icon) */}
         </View>
         <PressableButton title="Log ud" color="#dc2626" onPress={async () => { await logout(); show('Du er nu logget ud', 'success'); }} iconName="arrow-right-from-bracket" style={{ ...styles.button, marginTop: 8 }} />
         </View>

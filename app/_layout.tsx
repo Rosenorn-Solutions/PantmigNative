@@ -45,29 +45,34 @@ function WebHeader({ navigation, options, back }: any) {
             {title}
           </Text>
         </View>
-        <View style={{ width: 64, justifyContent: 'center', alignItems: 'flex-end' }}>
+        <View style={{ width: 112, justifyContent: 'center', alignItems: 'flex-end', flexDirection: 'row', gap: 4 }}>
           {token ? (
-            <Pressable onPress={() => navigation?.navigate?.('notifications')} style={{ paddingVertical: 8, paddingHorizontal: 8, position: 'relative' }}>
-              <FontAwesome6 name="bell" size={18} color="black" />
-              {unreadCount > 0 ? (
-                <View
-                  style={{
-                    position: 'absolute',
-                    top: 4,
-                    right: 4,
-                    backgroundColor: '#ef4444',
-                    borderRadius: 9999,
-                    minWidth: 16,
-                    height: 16,
-                    paddingHorizontal: 3,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Text style={{ color: 'white', fontSize: 10, fontWeight: '700' }}>{unreadCount}</Text>
-                </View>
-              ) : null}
-            </Pressable>
+            <>
+              <Pressable onPress={() => navigation?.navigate?.('profile')} style={{ paddingVertical: 8, paddingHorizontal: 8 }}>
+                <FontAwesome6 name="user" size={18} color="black" />
+              </Pressable>
+              <Pressable onPress={() => navigation?.navigate?.('notifications')} style={{ paddingVertical: 8, paddingHorizontal: 8, position: 'relative' }}>
+                <FontAwesome6 name="bell" size={18} color="black" />
+                {unreadCount > 0 ? (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      backgroundColor: '#ef4444',
+                      borderRadius: 9999,
+                      minWidth: 16,
+                      height: 16,
+                      paddingHorizontal: 3,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text style={{ color: 'white', fontSize: 10, fontWeight: '700' }}>{unreadCount}</Text>
+                  </View>
+                ) : null}
+              </Pressable>
+            </>
           ) : null}
         </View>
       </View>
@@ -77,7 +82,7 @@ function WebHeader({ navigation, options, back }: any) {
 
 const renderWebHeader = (props: any) => <WebHeader {...props} />;
 
-function HeaderBell() {
+function HeaderRightActions() {
   const nav = useNavigation<any>();
   const route = useRoute();
   const { token } = useAuth();
@@ -87,27 +92,32 @@ function HeaderBell() {
   const name = (route as any)?.name as string | undefined;
   if (!token || name === 'login' || name === 'register') return null;
   return (
-    <Pressable onPress={() => nav.navigate('notifications')} style={{ paddingVertical: 6, paddingHorizontal: 12, position: 'relative' }}>
-      <FontAwesome6 name="bell" size={18} color="black" />
-      {unreadCount > 0 ? (
-        <View
-          style={{
-            position: 'absolute',
-            top: 2,
-            right: 6,
-            backgroundColor: '#ef4444',
-            borderRadius: 9999,
-            minWidth: 14,
-            height: 14,
-            paddingHorizontal: 3,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text style={{ color: 'white', fontSize: 9, fontWeight: '700' }}>{unreadCount}</Text>
-        </View>
-      ) : null}
-    </Pressable>
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <Pressable onPress={() => nav.navigate('profile')} style={{ paddingVertical: 6, paddingHorizontal: 12 }}>
+        <FontAwesome6 name="user" size={18} color="black" />
+      </Pressable>
+      <Pressable onPress={() => nav.navigate('notifications')} style={{ paddingVertical: 6, paddingHorizontal: 12, position: 'relative' }}>
+        <FontAwesome6 name="bell" size={18} color="black" />
+        {unreadCount > 0 ? (
+          <View
+            style={{
+              position: 'absolute',
+              top: 2,
+              right: 6,
+              backgroundColor: '#ef4444',
+              borderRadius: 9999,
+              minWidth: 14,
+              height: 14,
+              paddingHorizontal: 3,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{ color: 'white', fontSize: 9, fontWeight: '700' }}>{unreadCount}</Text>
+          </View>
+        ) : null}
+      </Pressable>
+    </View>
   );
 }
 
@@ -148,7 +158,7 @@ export default function RootLayout() {
                   web: renderWebHeader,
                   default: undefined,
                 }) as any,
-                headerRight: () => <HeaderBell />,
+                headerRight: () => <HeaderRightActions />,
               })}
             >
               <Stack.Screen name="index" options={{ title: 'Forside', headerBackVisible: false }} />
@@ -167,6 +177,7 @@ export default function RootLayout() {
               {/* If present, also treat receipt upload as forward */}
               <Stack.Screen name="receipt-upload/[listingId]" options={{ title: 'Kvittering', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
               <Stack.Screen name="notifications" options={{ title: 'Notifikationer', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
+              <Stack.Screen name="profile" options={{ title: 'Profil', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
               <Stack.Screen name="settings" options={{ title: 'Indstillinger', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
               {/* Map screen */}
               <Stack.Screen name="listings-map" options={{ title: 'Kort over opslag', animation: Platform.OS === 'web' ? undefined : 'slide_from_right' }} />
