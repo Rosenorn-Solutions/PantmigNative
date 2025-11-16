@@ -6,7 +6,7 @@ import { connectNotificationsHub, fetchRecentNotifications, markNotificationsRea
 import { notificationsStore } from './services/notificationsStore';
 
 export const NotificationsProvider = ({ children }: { children: React.ReactNode }) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { show } = useToast();
   const connRef = useRef<signalR.HubConnection | null>(null);
   const reconnectRef = useRef<number | null>(null);
@@ -28,11 +28,17 @@ export const NotificationsProvider = ({ children }: { children: React.ReactNode 
 
     let isMounted = true;
 
+    const allowType = (t: NotificationType) => {
+      if (user?.role === 'Donator') return t === NotificationType.RecyclerApplied || t === NotificationType.ChatMessage || t === NotificationType.MeetingSet;
+      if (user?.role === 'Recycler') return t === NotificationType.DonorAccepted || t === NotificationType.ChatMessage || t === NotificationType.MeetingSet;
+      return true;
+    };
+
     const hydrate = async () => {
       try {
         const list = await fetchRecentNotifications(50);
         if (!isMounted) return;
-        notificationsStore.replaceAll(list);
+        notificationsStore.replaceAll(list.filter(n => allowType(n.type)));
       } catch (e) {
         // eslint-disable-next-line no-console
         console.warn('Failed to load notifications', e);
@@ -41,15 +47,16 @@ export const NotificationsProvider = ({ children }: { children: React.ReactNode 
 
     const notifyText = (n: NotificationDto) => {
       switch (n.type) {
-        case NotificationType.RecyclerApplied: return n.message || 'Ny ansøgning';
-        case NotificationType.DonorAccepted: return n.message || 'Du er accepteret';
-        case NotificationType.ChatMessage: return n.message || 'Ny chatbesked';
-        case NotificationType.MeetingSet: return n.message || 'Mødested sat';
-        default: return n.message || 'Ny notifikation';
+        case NotificationType.RecyclerApplied: return 'En panter har ansøgt på dit opslag.';
+        case NotificationType.DonorAccepted: return 'Din ansøgning er blevet accepteret.';
+        case NotificationType.ChatMessage: return 'Ny chatbesked.';
+        case NotificationType.MeetingSet: return 'Mødested er sat.';
+        default: return 'Ny notifikation.';
       }
     };
 
     const onNotify = (n: NotificationDto) => {
+      if (!allowType(n.type)) return;
       notificationsStore.add(n);
       show(notifyText(n), 'info');
     };

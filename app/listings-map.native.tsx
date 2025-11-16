@@ -111,6 +111,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#4b5563',
   },
+  calloutItems: {
+    fontSize: 12,
+    color: '#374151',
+  },
 });
 
 export default function ListingsMapScreen() {
@@ -321,6 +325,14 @@ export default function ListingsMapScreen() {
   const locationButtonLabel = locationStatus === 'granted' ? 'Opdater position' : 'Brug min position';
   const overlayPrimaryText = useMemo(() => buildOverlayPrimaryText(anchorSource, anchorSummary.label), [anchorSource, anchorSummary.label]);
   const overlaySecondaryText = useMemo(() => buildOverlaySecondaryText(anchorSource), [anchorSource]);
+  const materialLabel = React.useCallback((t: number): string | null => {
+    switch (t) {
+      case 1: return 'Plastikflasker';
+      case 2: return 'Glasflasker';
+      case 3: return 'Dåser';
+      default: return null;
+    }
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -371,6 +383,16 @@ export default function ListingsMapScreen() {
                 ) : null}
                 {listingsWithCoords.map((l) => {
                   const statusView = getListingStatusView(l);
+                  const from = l.availableFrom ? new Date(l.availableFrom) : null;
+                  const to = l.availableTo ? new Date(l.availableTo) : null;
+                  const pad = (n: number) => String(n).padStart(2, '0');
+                  const fmt = (d: Date | null) => d ? `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}` : '';
+                  const itemsArr = Array.isArray(l.items) ? l.items : [];
+                  const typeLabels = itemsArr
+                    .map((it: any) => it?.type)
+                    .filter((t: any, idx: number, arr: any[]) => t != null && arr.indexOf(t) === idx)
+                    .map((t: number) => materialLabel(t))
+                    .filter(Boolean) as string[];
                   return (
                     <Marker
                       key={l.id}
@@ -382,7 +404,12 @@ export default function ListingsMapScreen() {
                       <Callout style={{ minWidth: 200 }}>
                         <Text style={styles.calloutTitle}>{l.title}</Text>
                         <Text style={[styles.calloutStatus, { color: statusView.color }]}>Status: {statusView.label}</Text>
-                        {!!l.location && <Text style={styles.calloutLocation}>{l.location}</Text>}
+                        {!!from && <Text style={styles.calloutLocation}>Fra: {fmt(from)}</Text>}
+                        {!!to && <Text style={styles.calloutLocation}>Til: {fmt(to)}</Text>}
+                        {typeLabels.length > 0 && (
+                          <Text style={styles.calloutItems}>Materialer: {typeLabels.join(', ')}</Text>
+                        )}
+                        {!!l.location && <Text style={[styles.calloutLocation, { marginTop: 2 }]}>{l.location}</Text>}
                         {user?.role === 'Recycler' && (
                           <PressableButton
                             title={getApplyLabel(l)}

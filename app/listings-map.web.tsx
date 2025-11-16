@@ -121,9 +121,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#4b5563',
   },
+  popupItems: {
+    fontSize: 12,
+    color: '#374151',
+    marginTop: 2,
+  },
 });
 
 export default function ListingsMapWebScreen() {
+    const materialLabel = (t: number): string | null => {
+      switch (t) {
+        case 1: return 'Plastikflasker';
+        case 2: return 'Glasflasker';
+        case 3: return 'Dåser';
+        default: return null;
+      }
+    };
   useLeafletCss();
   const { cityExternalId } = useLocalSearchParams<{ cityExternalId?: string }>();
   const { token, user } = useAuth();
@@ -417,12 +430,27 @@ export default function ListingsMapWebScreen() {
                 ) : null}
                 {listingsWithCoords.map((l) => {
                   const statusView = getListingStatusView(l);
+                  const from = l.availableFrom ? new Date(l.availableFrom) : null;
+                  const to = l.availableTo ? new Date(l.availableTo) : null;
+                  const pad = (n: number) => String(n).padStart(2, '0');
+                  const fmt = (d: Date | null) => d ? `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}` : '';
+                  const itemsArr = Array.isArray(l.items) ? l.items : [];
+                  const typeLabels = itemsArr
+                    .map((it: any) => it?.type)
+                    .filter((t: any, idx: number, arr: any[]) => t != null && arr.indexOf(t) === idx)
+                    .map((t: number) => materialLabel(t))
+                    .filter(Boolean) as string[];
                   return (
                     <Marker key={l.id} position={[l.meetingPointLatitude, l.meetingPointLongtitude]} icon={listingIcon}>
                       <Popup>
                         <Text style={styles.popupTitle}>{l.title}</Text>
                         <Text style={[styles.popupText, { color: statusView.color }]}>Status: {statusView.label}</Text>
-                        {!!l.location && <Text style={styles.popupText}>{l.location}</Text>}
+                        {!!from && <Text style={styles.popupText}>Fra: {fmt(from)}</Text>}
+                        {!!to && <Text style={styles.popupText}>Til: {fmt(to)}</Text>}
+                        {typeLabels.length > 0 && (
+                          <Text style={styles.popupItems}>Materialer: {typeLabels.join(', ')}</Text>
+                        )}
+                        {!!l.location && <Text style={[styles.popupText, { marginTop: 2 }]}>{l.location}</Text>}
                         {user?.role === 'Recycler' && (
                           <PressableButton
                             title={getApplyLabel(l)}

@@ -7,7 +7,7 @@ import { markNotificationsRead } from './services/notifications';
 import { notificationsStore, useNotifications } from './services/notificationsStore';
 
 export default function NotificationsScreen() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const router = useRouter();
   const { items, unreadCount } = useNotifications();
 
@@ -20,8 +20,12 @@ export default function NotificationsScreen() {
     } else if (type === 4 /* MeetingSet */) {
       router.push({ pathname: '/meeting-point/[listingId]', params: { listingId: String(listingId) } } as any);
     } else {
-      // Fallback to my-listings
-      router.push('/my-listings');
+      // Fallback: donor -> my-listings, recycler -> my-applications
+      if (user?.role === 'Recycler') {
+        router.push('/my-applications');
+      } else {
+        router.push('/my-listings');
+      }
     }
     notificationsStore.markRead([id]);
     try { await markNotificationsRead([id]); } catch {}
@@ -47,8 +51,14 @@ export default function NotificationsScreen() {
         ListEmptyComponent={<Text style={{ padding: 16, textAlign: 'center', color: '#666' }}>Ingen notifikationer endnu.</Text>}
         renderItem={({ item }) => {
           const when = new Date(item.createdAt).toLocaleString('da-DK');
-          const base = item.message ? item.message : ('#' + String(item.id));
-          const title = base + '  ·  ' + when;
+          // Localize message regardless of server text
+          let base = '';
+          if (item.type === 1) base = 'En panter har ansøgt på dit opslag.';
+          else if (item.type === 2) base = 'Din ansøgning er blevet accepteret.';
+          else if (item.type === 3) base = 'Ny chatbesked.';
+          else if (item.type === 4) base = 'Mødested er sat.';
+          else base = 'Ny notifikation.';
+          const title = `${base}  ·  ${when}`;
           return (
             <PressableButton
               title={title}

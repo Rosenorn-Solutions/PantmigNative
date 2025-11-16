@@ -48,6 +48,7 @@ export default function DetailsStep({ errors, cityQuery, cityOpen, cityResults, 
   const inputRef = React.useRef<TextInput>(null as any);
   const addressRef = React.useRef<TextInput>(null as any);
   const [addressCloseTick, setAddressCloseTick] = React.useState(0);
+  const [descFocused, setDescFocused] = React.useState(false);
   const handleSelect = React.useCallback((c: CitySearchResult) => {
     onCitySelect(c);
     setTimeout(() => inputRef.current?.focus(), 0);
@@ -70,7 +71,18 @@ export default function DetailsStep({ errors, cityQuery, cityOpen, cityResults, 
       <TextInput style={[styles.input, errors.title && styles.inputError]} placeholder="Titel" onChangeText={onTitleChange} />
       {!!errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
       <Text style={styles.webPickerLabel}>Beskrivelse (krævet)</Text>
-      <TextInput style={[styles.input, errors.description && styles.inputError]} placeholder="Beskrivelse" onChangeText={onDescriptionChange} />
+      <TextInput
+        style={[
+          styles.input,
+          errors.description && styles.inputError,
+          descFocused ? { minHeight: 120, textAlignVertical: 'top' } : { minHeight: 64, textAlignVertical: 'top' },
+        ]}
+        placeholder="Beskrivelse"
+        onChangeText={onDescriptionChange}
+        onFocus={() => setDescFocused(true)}
+        onBlur={() => setDescFocused(false)}
+        multiline
+      />
       {!!errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
   <View style={[styles.typeaheadContainer, cityOpen && styles.typeaheadOpen, { zIndex: cityOpen ? 40 : 20 }]}>
         <Text style={styles.webPickerLabel}>By (krævet)</Text>

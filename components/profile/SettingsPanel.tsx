@@ -124,7 +124,6 @@ export default function SettingsPanel() {
             onPress={() => setShowPw(s => !s)}
             color="#16a34a"
             iconName="key"
-            style={formStyles.navRow as any}
           />
           {showPw ? (
             <View style={{ marginTop: 8 }}>
@@ -229,6 +228,7 @@ export default function SettingsPanel() {
           color="#dc2626"
           iconName="user-slash"
         />
+        <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 6 }}>Deaktivering sletter dine data efter 30 dage.</Text>
       </View>
 
       <Modal visible={confirmDisable} transparent animationType="fade" onRequestClose={() => setConfirmDisable(false)}>

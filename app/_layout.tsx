@@ -17,7 +17,9 @@ function WebHeader({ navigation, options, back }: any) {
   // React Navigation sometimes omits the `back` prop on web even when a previous
   // entry exists in history (e.g. after full reload). Fallback to canGoBack().
   const backAllowedByOptions = options?.headerBackVisible !== false;
-  const canGoBack = backAllowedByOptions && (back || navigation?.canGoBack?.());
+  const w: any = (typeof globalThis !== 'undefined' && (globalThis as any).window) ? (globalThis as any).window : null;
+  const historyCanGoBack = !!w && !!w.history && w.history.length > 1;
+  const canGoBack = backAllowedByOptions && ((back || navigation?.canGoBack?.()) || historyCanGoBack);
   return (
     <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee', justifyContent: 'center' }}>
       <View
@@ -35,7 +37,7 @@ function WebHeader({ navigation, options, back }: any) {
       >
         <View style={{ width: 64, justifyContent: 'center' }}>
           {canGoBack ? (
-            <Pressable onPress={() => navigation.goBack()} style={{ paddingVertical: 8, paddingHorizontal: 8 }}>
+            <Pressable onPress={() => { if (navigation?.canGoBack?.()) navigation.goBack(); else if (historyCanGoBack) w.history.back(); }} style={{ paddingVertical: 8, paddingHorizontal: 8 }}>
               <FontAwesome6 name="arrow-left" size={18} color="black" style={{ marginRight: 6 }} />
             </Pressable>
           ) : null}

@@ -9,6 +9,10 @@ export default function ProfileScreen() {
   if (!token) return <Redirect href="/login" />;
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ');
+  let roleLabel = user?.role || '—';
+  if (user?.role === 'Donator') roleLabel = 'Donor';
+  if (user?.role === 'Recycler') roleLabel = 'Panter';
+  const birthFormatted = user?.birthDate ? formatBirth(user.birthDate) : null;
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
@@ -19,15 +23,35 @@ export default function ProfileScreen() {
         <View style={{ gap: 6 }}>
           <Row label="Navn" value={fullName || '—'} />
           <Row label="Email" value={user?.email || '—'} />
-          <Row label="Rolle" value={user?.role || '—'} />
+          <Row label="Rolle" value={roleLabel} />
           <Row label="By" value={user?.cityName || '—'} />
-          {user?.birthDate ? <Row label="Fødselsdato" value={user.birthDate} /> : null}
+          {birthFormatted ? <Row label="Fødselsdato" value={birthFormatted} /> : null}
         </View>
       </View>
 
       <SettingsPanel />
     </ScrollView>
   );
+}
+
+function formatBirth(input: string): string {
+  // Accepts 'YYYY-MM-DD' or ISO; outputs 'DD / MM - YYYY'
+  try {
+    let y = '', m = '', d = '';
+    const rx = /^(\d{4})-(\d{2})-(\d{2})$/;
+    const m1 = rx.exec(input);
+    if (m1) { y = m1[1]; m = m1[2]; d = m1[3]; }
+    else {
+      const dt = new Date(input as any);
+      if (!Number.isNaN(dt.getTime())) {
+        y = String(dt.getFullYear());
+        m = String(dt.getMonth() + 1).padStart(2, '0');
+        d = String(dt.getDate()).padStart(2, '0');
+      }
+    }
+    if (y && m && d) return `${d} / ${m} - ${y}`;
+  } catch {}
+  return input;
 }
 
 type RowProps = Readonly<{ label: string; value: string }>;
