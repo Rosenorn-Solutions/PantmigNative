@@ -161,6 +161,12 @@ export interface RecycleListingResponse {
      * @memberof RecycleListingResponse
      */
     images?: Array<RecycleListingImageResponse> | null;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof RecycleListingResponse
+     */
+    applicantUserIds?: Array<string> | null;
 }
 
 
@@ -202,6 +208,7 @@ export function RecycleListingResponseFromJSONTyped(json: any, ignoreDiscriminat
         'meetingPointLongtitude': json['meetingPointLongtitude'] == null ? undefined : json['meetingPointLongtitude'],
         'items': json['items'] == null ? undefined : ((json['items'] as Array<any>).map(RecycleListingItemResponseFromJSON)),
         'images': json['images'] == null ? undefined : ((json['images'] as Array<any>).map(RecycleListingImageResponseFromJSON)),
+        'applicantUserIds': json['applicantUserIds'] == null ? undefined : json['applicantUserIds'],
     };
 }
 
@@ -236,6 +243,7 @@ export function RecycleListingResponseToJSONTyped(value?: RecycleListingResponse
         'meetingPointLongtitude': value['meetingPointLongtitude'],
         'items': value['items'] == null ? undefined : ((value['items'] as Array<any>).map(RecycleListingItemResponseToJSON)),
         'images': value['images'] == null ? undefined : ((value['images'] as Array<any>).map(RecycleListingImageResponseToJSON)),
+        'applicantUserIds': value['applicantUserIds'],
     };
 }
 

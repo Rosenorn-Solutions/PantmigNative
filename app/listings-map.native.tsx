@@ -325,14 +325,7 @@ export default function ListingsMapScreen() {
   const locationButtonLabel = locationStatus === 'granted' ? 'Opdater position' : 'Brug min position';
   const overlayPrimaryText = useMemo(() => buildOverlayPrimaryText(anchorSource, anchorSummary.label), [anchorSource, anchorSummary.label]);
   const overlaySecondaryText = useMemo(() => buildOverlaySecondaryText(anchorSource), [anchorSource]);
-  const materialLabel = React.useCallback((t: number): string | null => {
-    switch (t) {
-      case 1: return 'Plastikflasker';
-      case 2: return 'Glasflasker';
-      case 3: return 'Dåser';
-      default: return null;
-    }
-  }, []);
+  // material label mapping no longer needed; showing checkmarks per type
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -388,11 +381,12 @@ export default function ListingsMapScreen() {
                   const pad = (n: number) => String(n).padStart(2, '0');
                   const fmt = (d: Date | null) => d ? `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}` : '';
                   const itemsArr = Array.isArray(l.items) ? l.items : [];
-                  const typeLabels = itemsArr
-                    .map((it: any) => it?.type)
-                    .filter((t: any, idx: number, arr: any[]) => t != null && arr.indexOf(t) === idx)
-                    .map((t: number) => materialLabel(t))
-                    .filter(Boolean) as string[];
+                  const matTypes = itemsArr
+                    .map((it: any) => (it?.materialType as number | undefined))
+                    .filter((t: any, idx: number, arr: any[]) => t != null && arr.indexOf(t) === idx) as number[];
+                  const hasPlast = matTypes.includes(1);
+                  const hasGlas = matTypes.includes(2);
+                  const hasCan = matTypes.includes(3);
                   return (
                     <Marker
                       key={l.id}
@@ -406,9 +400,9 @@ export default function ListingsMapScreen() {
                         <Text style={[styles.calloutStatus, { color: statusView.color }]}>Status: {statusView.label}</Text>
                         {!!from && <Text style={styles.calloutLocation}>Fra: {fmt(from)}</Text>}
                         {!!to && <Text style={styles.calloutLocation}>Til: {fmt(to)}</Text>}
-                        {typeLabels.length > 0 && (
-                          <Text style={styles.calloutItems}>Materialer: {typeLabels.join(', ')}</Text>
-                        )}
+                        <Text style={styles.calloutItems}>Plastikflasker: {hasPlast ? '✅' : '❌'}</Text>
+                        <Text style={styles.calloutItems}>Glasflasker: {hasGlas ? '✅' : '❌'}</Text>
+                        <Text style={styles.calloutItems}>Dåser: {hasCan ? '✅' : '❌'}</Text>
                         {!!l.location && <Text style={[styles.calloutLocation, { marginTop: 2 }]}>{l.location}</Text>}
                         {user?.role === 'Recycler' && (
                           <PressableButton

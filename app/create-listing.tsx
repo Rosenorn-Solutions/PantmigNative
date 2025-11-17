@@ -294,7 +294,6 @@ export default function CreateListingScreen() {
   const getDetailsErrors = () => {
     const next: Record<string, string> = {};
     if (!form.title?.trim()) next.title = 'Titel er påkrævet';
-    if (!form.description?.trim()) next.description = 'Beskrivelse er påkrævet';
     const cityVal = (form.city || cityQuery || '').trim();
     if (!cityVal) next.city = 'By er påkrævet';
     const addr = (form.location || '').trim();

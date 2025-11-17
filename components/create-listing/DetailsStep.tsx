@@ -2,6 +2,7 @@ import React from 'react';
 import { InteractionManager, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import type { CitySearchResult } from '../../app/apis/pantmig-api';
 import AddressTypeahead from '../AddressTypeahead';
+import HintTooltip from '../HintTooltip';
 import PressableButton from '../PressableButton';
 
 type Styles = {
@@ -70,7 +71,15 @@ export default function DetailsStep({ errors, cityQuery, cityOpen, cityResults, 
       <Text style={styles.webPickerLabel}>Titel (krævet)</Text>
       <TextInput style={[styles.input, errors.title && styles.inputError]} placeholder="Titel" onChangeText={onTitleChange} />
       {!!errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
-      <Text style={styles.webPickerLabel}>Beskrivelse (krævet)</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Text style={styles.webPickerLabel}>Beskrivelse (valgfri)</Text>
+        <View style={{ marginLeft: 6 }}>
+          <HintTooltip
+            message="Kunne f.eks. være direktioner, hund i haven, eller andet."
+            placement="top-right"
+          />
+        </View>
+      </View>
       <TextInput
         style={[
           styles.input,

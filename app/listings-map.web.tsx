@@ -126,17 +126,16 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginTop: 2,
   },
+  line: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
 });
 
 export default function ListingsMapWebScreen() {
-    const materialLabel = (t: number): string | null => {
-      switch (t) {
-        case 1: return 'Plastikflasker';
-        case 2: return 'Glasflasker';
-        case 3: return 'Dåser';
-        default: return null;
-      }
-    };
   useLeafletCss();
   const { cityExternalId } = useLocalSearchParams<{ cityExternalId?: string }>();
   const { token, user } = useAuth();
@@ -435,22 +434,31 @@ export default function ListingsMapWebScreen() {
                   const pad = (n: number) => String(n).padStart(2, '0');
                   const fmt = (d: Date | null) => d ? `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}` : '';
                   const itemsArr = Array.isArray(l.items) ? l.items : [];
-                  const typeLabels = itemsArr
-                    .map((it: any) => it?.type)
-                    .filter((t: any, idx: number, arr: any[]) => t != null && arr.indexOf(t) === idx)
-                    .map((t: number) => materialLabel(t))
-                    .filter(Boolean) as string[];
+                  const matTypes = itemsArr
+                    .map((it: any) => (it?.materialType as number | undefined))
+                    .filter((t: any, idx: number, arr: any[]) => t != null && arr.indexOf(t) === idx) as number[];
+                  const hasPlast = matTypes.includes(1);
+                  const hasGlas = matTypes.includes(2);
+                  const hasCan = matTypes.includes(3);
                   return (
                     <Marker key={l.id} position={[l.meetingPointLatitude, l.meetingPointLongtitude]} icon={listingIcon}>
                       <Popup>
-                        <Text style={styles.popupTitle}>{l.title}</Text>
-                        <Text style={[styles.popupText, { color: statusView.color }]}>Status: {statusView.label}</Text>
-                        {!!from && <Text style={styles.popupText}>Fra: {fmt(from)}</Text>}
-                        {!!to && <Text style={styles.popupText}>Til: {fmt(to)}</Text>}
-                        {typeLabels.length > 0 && (
-                          <Text style={styles.popupItems}>Materialer: {typeLabels.join(', ')}</Text>
-                        )}
-                        {!!l.location && <Text style={[styles.popupText, { marginTop: 2 }]}>{l.location}</Text>}
+                        <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                          <View style={styles.line}><Text style={styles.popupTitle}>{l.title}</Text></View>
+                          <View style={styles.line}><Text style={[styles.popupText, { color: statusView.color }]}>Status: {statusView.label}</Text></View>
+                          {!!from && <View style={styles.line}><Text style={styles.popupText}>Fra: {fmt(from)}</Text></View>}
+                          {!!to && <View style={styles.line}><Text style={styles.popupText}>Til: {fmt(to)}</Text></View>}
+                          <View style={[styles.line, { marginTop: 4 }]}>
+                            <Text style={styles.popupItems}>Plastikflasker: {hasPlast ? '✅' : '❌'}</Text>
+                          </View>
+                          <View style={styles.line}>
+                            <Text style={styles.popupItems}>Glasflasker: {hasGlas ? '✅' : '❌'}</Text>
+                          </View>
+                          <View style={styles.line}>
+                            <Text style={styles.popupItems}>Dåser: {hasCan ? '✅' : '❌'}</Text>
+                          </View>
+                          {!!l.location && <View style={[styles.line, { marginTop: 4 }]}><Text style={styles.popupText}>{l.location}</Text></View>}
+                        </View>
                         {user?.role === 'Recycler' && (
                           <PressableButton
                             title={getApplyLabel(l)}
