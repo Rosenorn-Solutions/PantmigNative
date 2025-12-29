@@ -65,7 +65,7 @@ jobs:
           host: ${{ vars.SERVER_NAME }}
           username: ${{ vars.SERVER_USER }}
           key: ${{ secrets.SERVER_ROOT_CERTIFICATE }}
-          passphrase: ${{ secrets.SERVER_ROOT_CERTIFICATE_PASSPHRASE }}
+          passphrase: ${{ secrets.SERVER_ROOT_CERTIFICATE_PASSWORD }}
           source: "./web-dist/*"
           target: "/var/www/pantmig/web/current/"
           strip_components: 1
@@ -76,7 +76,7 @@ jobs:
           host: ${{ vars.SERVER_NAME }}
           username: ${{ vars.SERVER_USER }}
           key: ${{ secrets.SERVER_ROOT_CERTIFICATE }}
-          passphrase: ${{ secrets.SERVER_ROOT_CERTIFICATE_PASSPHRASE }}
+          passphrase: ${{ secrets.SERVER_ROOT_CERTIFICATE_PASSWORD }}
           script: |
             set -e
             WEB_ROOT=/var/www/pantmig/web
