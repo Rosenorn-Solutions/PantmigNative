@@ -84,7 +84,7 @@ jobs:
             # Ensure current directory exists (artifact was copied there)
             sudo mkdir -p "$CURRENT_DIR"
             # Normalize ownership (non-fatal if not needed)
-            sudo chown -R $USER:$USER "$WEB_ROOT" || true
+            sudo chown -R pantmigservice:pantmigservice "$WEB_ROOT" || true
             # Reload nginx if available (ignore errors if not present)
             if command -v sudo >/dev/null 2>&1; then
               sudo systemctl reload nginx || true
