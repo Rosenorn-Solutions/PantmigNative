@@ -1,10 +1,10 @@
 import { Redirect, useRouter } from 'expo-router';
 import React from 'react';
 import { FlatList, Text, View } from 'react-native';
-import PressableButton from '../components/PressableButton';
-import { useAuth } from './AuthContext';
-import { markNotificationsRead } from './services/notifications';
-import { notificationsStore, useNotifications } from './services/notificationsStore';
+import PressableButton from '../../components/PressableButton';
+import { useAuth } from '../providers/AuthContext';
+import { markNotificationsRead } from '../services/notifications';
+import { notificationsStore, useNotifications } from '../services/notificationsStore';
 
 export default function NotificationsScreen() {
   const { token, user } = useAuth();

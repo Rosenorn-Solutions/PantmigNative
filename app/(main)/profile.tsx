@@ -1,8 +1,8 @@
 import { Redirect } from 'expo-router';
 import React from 'react';
 import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
-import SettingsPanel from '../components/profile/SettingsPanel';
-import { useAuth } from './AuthContext';
+import SettingsPanel from '../../components/profile/SettingsPanel';
+import { useAuth } from '../providers/AuthContext';
 
 export default function ProfileScreen() {
   const { token, user } = useAuth();

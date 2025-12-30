@@ -2,12 +2,12 @@ import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { Redirect, useRouter } from "expo-router";
 import React from 'react';
 import { ActivityIndicator, Image, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
-import PressableButton from "../components/PressableButton";
-import StatsPreview, { StatsData } from "../components/StatsPreview";
-import { useAuth } from "./AuthContext";
-import { useToast } from "./Toast";
-import { createStatisticsApi } from './services/api';
-import { useNotifications } from './services/notificationsStore';
+import PressableButton from "../../components/PressableButton";
+import StatsPreview, { StatsData } from "../../components/StatsPreview";
+import { useAuth } from "../providers/AuthContext";
+import { useToast } from "../providers/ToastProvider";
+import { createStatisticsApi } from '../services/api';
+import { useNotifications } from '../services/notificationsStore';
 
 export default function Index() {
   const router = useRouter();
@@ -86,7 +86,7 @@ export default function Index() {
       <View style={styles.hero}>
         <View style={styles.heroAccent} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, justifyContent: 'center' }}>
-          <Image source={require('../assets/images/logo-dark.png')} style={{ width: 36, height: 36, resizeMode: 'contain' }} />
+          <Image source={require('../../assets/images/logo-dark.png')} style={{ width: 36, height: 36, resizeMode: 'contain' }} />
           <Text style={styles.hello}>Hej {user?.firstName}</Text>
         </View>
         <View style={{ marginTop: 4, justifyContent: 'center', alignItems: 'center' }}>

@@ -2,10 +2,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Redirect, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import PressableButton from '../components/PressableButton';
-import { useAuth } from './AuthContext';
-import { useToast } from './Toast';
-import { formStyles } from './utils/formStyles';
+import PressableButton from '../../components/PressableButton';
+import { useAuth } from '../providers/AuthContext';
+import { useToast } from '../providers/ToastProvider';
+import { formStyles } from '../utils/formStyles';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -132,7 +132,7 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <Animated.View style={[styles.logoWrapper, { opacity: fadeLogo, transform: [{ scale: scaleLogo }] }]}>        
         <Image
-          source={require('../assets/images/logo-dark.png')}
+          source={require('../../assets/images/logo-dark.png')}
           style={styles.logo}
           resizeMode="contain"
           accessibilityRole="image"

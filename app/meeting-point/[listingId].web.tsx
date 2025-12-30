@@ -2,8 +2,8 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, Text, TextInput, View } from 'react-native';
 import PressableButton from '../../components/PressableButton';
-import { useAuth } from '../AuthContext';
-import { useToast } from '../Toast';
+import { useAuth } from '../providers/AuthContext';
+import { useToast } from '../providers/ToastProvider';
 import { createRecycleListingsApi } from '../services/api';
 // Using direct Photon geocoding (no shared service)
 const MIN_CHARS = 3;

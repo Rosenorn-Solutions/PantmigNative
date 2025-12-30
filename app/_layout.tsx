@@ -1,16 +1,18 @@
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { Stack } from "expo-router";
+import { useRoute } from '@react-navigation/native';
+import { Stack, useRouter, useSegments } from "expo-router";
 import { Platform, Pressable, Text, View } from "react-native";
-import { AuthProvider, useAuth } from "./AuthContext";
-import { NotificationsProvider } from './NotificationsProvider';
-import { ToastProvider } from "./Toast";
+import { AuthProvider, useAuth } from "./providers/AuthContext";
+import { NotificationsProvider } from './providers/NotificationsProvider';
+import { ToastProvider } from "./providers/ToastProvider";
 import { useNotifications } from './services/notificationsStore';
 
 
 const MAX_WIDTH = 900;
 
 function WebHeader({ navigation, options, back }: any) {
+  const router = useRouter();
+  const segments = useSegments();
   const { unreadCount } = useNotifications();
   const { token } = useAuth();
   const title = options?.title ?? '';
@@ -19,7 +21,23 @@ function WebHeader({ navigation, options, back }: any) {
   const backAllowedByOptions = options?.headerBackVisible !== false;
   const w: any = (typeof globalThis !== 'undefined' && (globalThis as any).window) ? (globalThis as any).window : null;
   const historyCanGoBack = !!w && !!w.history && w.history.length > 1;
-  const canGoBack = backAllowedByOptions && ((back || navigation?.canGoBack?.()) || historyCanGoBack);
+  const navState = navigation?.getState?.();
+  const navRouteName = navState?.routes?.[navState.index ?? 0]?.name as string | undefined;
+  const optionRouteName = (options as any)?.route?.name as string | undefined;
+  const routeName = optionRouteName || navRouteName;
+  const logicalSegments = segments.filter((s) => !s?.startsWith?.('('));
+  const tail = logicalSegments[logicalSegments.length - 1];
+  const isRootish = logicalSegments.length === 0
+    || tail === 'index'
+    || tail === 'login'
+    || tail === 'register'
+    || routeName === 'index'
+    || routeName === 'login'
+    || routeName === 'register'
+    || routeName?.endsWith?.('/index')
+    || routeName?.endsWith?.('/login')
+    || routeName?.endsWith?.('/register');
+  const canGoBack = !isRootish && backAllowedByOptions && ((back || navigation?.canGoBack?.()) || historyCanGoBack);
   return (
     <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee', justifyContent: 'center' }}>
       <View
@@ -50,10 +68,10 @@ function WebHeader({ navigation, options, back }: any) {
         <View style={{ width: 112, justifyContent: 'center', alignItems: 'flex-end', flexDirection: 'row', gap: 4 }}>
           {token ? (
             <>
-              <Pressable onPress={() => navigation?.navigate?.('profile')} style={{ paddingVertical: 8, paddingHorizontal: 8 }}>
+              <Pressable onPress={() => router.push('/profile')} style={{ paddingVertical: 8, paddingHorizontal: 8 }}>
                 <FontAwesome6 name="user" size={18} color="black" />
               </Pressable>
-              <Pressable onPress={() => navigation?.navigate?.('notifications')} style={{ paddingVertical: 8, paddingHorizontal: 8, position: 'relative' }}>
+              <Pressable onPress={() => router.push('/notifications')} style={{ paddingVertical: 8, paddingHorizontal: 8, position: 'relative' }}>
                 <FontAwesome6 name="bell" size={18} color="black" />
                 {unreadCount > 0 ? (
                   <View
@@ -85,20 +103,21 @@ function WebHeader({ navigation, options, back }: any) {
 const renderWebHeader = (props: any) => <WebHeader {...props} />;
 
 function HeaderRightActions() {
-  const nav = useNavigation<any>();
+  const router = useRouter();
   const route = useRoute();
   const { token } = useAuth();
   const { unreadCount } = useNotifications();
   // Hide on web (custom header already shows bell), and hide on auth screens
   if (Platform.OS === 'web') return null;
   const name = (route as any)?.name as string | undefined;
-  if (!token || name === 'login' || name === 'register') return null;
+  const isAuthRoute = name?.includes('(auth)') || name?.endsWith('login') || name?.endsWith('register');
+  if (!token || isAuthRoute) return null;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <Pressable onPress={() => nav.navigate('profile')} style={{ paddingVertical: 6, paddingHorizontal: 12 }}>
+      <Pressable onPress={() => router.push('/profile')} style={{ paddingVertical: 6, paddingHorizontal: 12 }}>
         <FontAwesome6 name="user" size={18} color="black" />
       </Pressable>
-      <Pressable onPress={() => nav.navigate('notifications')} style={{ paddingVertical: 6, paddingHorizontal: 12, position: 'relative' }}>
+      <Pressable onPress={() => router.push('/notifications')} style={{ paddingVertical: 6, paddingHorizontal: 12, position: 'relative' }}>
         <FontAwesome6 name="bell" size={18} color="black" />
         {unreadCount > 0 ? (
           <View

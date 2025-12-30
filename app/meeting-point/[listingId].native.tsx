@@ -3,8 +3,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, Text, TextInput, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import PressableButton from '../../components/PressableButton';
-import { useAuth } from '../AuthContext';
-import { useToast } from '../Toast';
+import { useAuth } from '../providers/AuthContext';
+import { useToast } from '../providers/ToastProvider';
 import { createRecycleListingsApi } from '../services/api';
 // Using direct Photon geocoding (no shared service)
 // Reverted to direct geocoding fetch (Photon). Simple local config:

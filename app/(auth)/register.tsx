@@ -2,22 +2,22 @@ import type { DateTimePickerEvent } from '@react-native-community/datetimepicker
 import { Redirect, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Image, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
-import AccountStep from '../components/register/AccountStep';
-import CityStep from '../components/register/CityStep';
-import PersonalStep from '../components/register/PersonalStep';
-import RoleBirthStep from '../components/register/RoleBirthStep';
-import { CitiesApi } from './apis/pantmig-api/apis';
-import type { CitySearchResult } from './apis/pantmig-api/models/CitySearchResult';
-import type { Gender } from './apis/pantmig-auth/models/Gender';
-import { UserType } from './apis/pantmig-auth/models/UserType';
-import { useAuth } from './AuthContext';
-import { authApi, pantmigApiConfig } from './services/api';
-import { isEmailTaken, isPhoneTaken } from './services/validators';
-import { useToast } from './Toast';
-import { buildCityFields } from './utils/cityFields';
-import { formStyles } from './utils/formStyles';
-import { formatPhoneDKLocalDisplay, normalizePhoneDK } from './utils/phone';
-import { isValidEmail } from './utils/validators';
+import AccountStep from '../../components/register/AccountStep';
+import CityStep from '../../components/register/CityStep';
+import PersonalStep from '../../components/register/PersonalStep';
+import RoleBirthStep from '../../components/register/RoleBirthStep';
+import { CitiesApi } from '../apis/pantmig-api/apis';
+import type { CitySearchResult } from '../apis/pantmig-api/models/CitySearchResult';
+import type { Gender } from '../apis/pantmig-auth/models/Gender';
+import { UserType } from '../apis/pantmig-auth/models/UserType';
+import { useAuth } from '../providers/AuthContext';
+import { useToast } from '../providers/ToastProvider';
+import { authApi, pantmigApiConfig } from '../services/api';
+import { isEmailTaken, isPhoneTaken } from '../services/validators';
+import { buildCityFields } from '../utils/cityFields';
+import { formStyles } from '../utils/formStyles';
+import { formatPhoneDKLocalDisplay, normalizePhoneDK } from '../utils/phone';
+import { isValidEmail } from '../utils/validators';
 
 // NOTE: Do not create a new AuthApi() here; it would ignore configured basePath/middleware.
 
@@ -241,7 +241,7 @@ export default function RegisterScreen() {
   return (
   <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="always" keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}>
       <View style={styles.logoWrapper}>
-        <Image source={require('../assets/images/logo-dark.png')} style={styles.logo} resizeMode="contain" accessibilityRole="image" accessibilityLabel="Pantmig logo" />
+        <Image source={require('../../assets/images/logo-dark.png')} style={styles.logo} resizeMode="contain" accessibilityRole="image" accessibilityLabel="Pantmig logo" />
       </View>
       <Text style={styles.title}>Opret konto</Text>
       <Text style={styles.tagline}>Bliv en del af genbrugskredsløbet</Text>

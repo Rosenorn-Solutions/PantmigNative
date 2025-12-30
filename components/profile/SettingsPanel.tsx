@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useAuth } from '../../app/AuthContext';
+import { useAuth } from '../../app/providers/AuthContext';
+import { useToast } from '../../app/providers/ToastProvider';
 import { authApi } from '../../app/services/api';
 import { isEmailTaken } from '../../app/services/validators';
-import { useToast } from '../../app/Toast';
 import { formStyles } from '../../app/utils/formStyles';
 import { isValidEmail } from '../../app/utils/validators';
 import PressableButton from '../../components/PressableButton';
